@@ -4,8 +4,10 @@ import Database from 'better-sqlite3';
 import bcrypt from 'bcrypt';
 import cookieParser from 'cookie-parser';
 import session from 'express-session';
+import SqliteStore from 'better-sqlite3-session-store';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -14,15 +16,40 @@ const publicDir = path.join(__dirname, '../public');
 
 const app = express();
 const dbPath = process.env.DATABASE_PATH || path.join(rootDir, 'biblia.db');
+
+// Verificar se o diretório existe e criar se necessário
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+  console.log(`📁 Diretório criado: ${dbDir}`);
+}
+
+console.log(`📊 Conectando ao banco: ${dbPath}`);
+console.log(`🔧 NODE_ENV: ${process.env.NODE_ENV}`);
+
 const db = new Database(dbPath);
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
+
+// Verificar se o banco tem dados
+const userCount = db.prepare('SELECT COUNT(*) as count FROM usuarios').get();
+console.log(`👥 Usuários no banco: ${userCount.count}`);
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Configurar session store
+const SessionStore = SqliteStore(session);
 app.use(session({
+  store: new SessionStore({
+    client: db,
+    expired: {
+      clear: true,
+      intervalMs: 900000 // 15 minutos
+    }
+  }),
   secret: process.env.SESSION_SECRET || 'biblia-secret-2025-change-in-production',
   resave: false,
   saveUninitialized: false,
@@ -30,7 +57,7 @@ app.use(session({
     secure: isProduction, // true em produção com HTTPS
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 horas
-    sameSite: 'strict'
+    sameSite: isProduction ? 'strict' : 'lax'
   }
 }));
 
@@ -57,27 +84,51 @@ function requireAdmin(req, res, next) {
 
 // Login
 app.post('/api/login', (req, res) => {
-  const { username, senha } = req.body;
+  try {
+    const { username, senha } = req.body;
+    console.log(`🔐 Tentativa de login: ${username}`);
 
-  const usuario = db.prepare('SELECT * FROM usuarios WHERE username = ?').get(username);
-
-  if (!usuario || !bcrypt.compareSync(senha, usuario.senha_hash)) {
-    return res.status(401).json({ error: 'Credenciais inválidas' });
-  }
-
-  req.session.userId = usuario.id;
-  req.session.isAdmin = usuario.is_admin === 1;
-  req.session.nome = usuario.nome;
-
-  res.json({
-    success: true,
-    usuario: {
-      id: usuario.id,
-      nome: usuario.nome,
-      username: usuario.username,
-      isAdmin: usuario.is_admin === 1
+    if (!username || !senha) {
+      console.log('❌ Username ou senha não fornecidos');
+      return res.status(400).json({ error: 'Username e senha são obrigatórios' });
     }
-  });
+
+    const usuario = db.prepare('SELECT * FROM usuarios WHERE username = ?').get(username);
+    console.log(`👤 Usuário encontrado: ${usuario ? 'Sim' : 'Não'}`);
+
+    if (!usuario) {
+      console.log('❌ Usuário não encontrado no banco');
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+
+    const senhaValida = bcrypt.compareSync(senha, usuario.senha_hash);
+    console.log(`🔑 Senha válida: ${senhaValida ? 'Sim' : 'Não'}`);
+
+    if (!senhaValida) {
+      console.log('❌ Senha incorreta');
+      return res.status(401).json({ error: 'Credenciais inválidas' });
+    }
+
+    req.session.userId = usuario.id;
+    req.session.isAdmin = usuario.is_admin === 1;
+    req.session.nome = usuario.nome;
+
+    console.log(`✅ Login bem-sucedido: ${usuario.nome} (${usuario.username})`);
+    console.log(`🔧 Session ID: ${req.sessionID}`);
+
+    res.json({
+      success: true,
+      usuario: {
+        id: usuario.id,
+        nome: usuario.nome,
+        username: usuario.username,
+        isAdmin: usuario.is_admin === 1
+      }
+    });
+  } catch (error) {
+    console.error('❌ Erro no login:', error);
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
 });
 
 // Logout
