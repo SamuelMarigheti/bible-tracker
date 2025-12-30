@@ -1,5 +1,20 @@
 // Cliente API para integração multi-usuário
 let currentUser = null;
+let deveTrocarSenha = false;
+
+// Validar senha forte
+function validarSenhaForte(senha) {
+    if (senha.length < 8) {
+        return { valida: false, erro: 'A senha deve ter no mínimo 8 caracteres' };
+    }
+
+    const temCaractereEspecial = /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/'`~]/.test(senha);
+    if (!temCaractereEspecial) {
+        return { valida: false, erro: 'A senha deve conter pelo menos um caractere especial (!@#$%&*...)' };
+    }
+
+    return { valida: true };
+}
 
 // Verificar autenticação e redirecionar se necessário
 async function checkAuth() {
@@ -13,6 +28,7 @@ async function checkAuth() {
         }
 
         currentUser = data.usuario;
+        deveTrocarSenha = data.deveTrocarSenha || false;
 
         // Atualizar nome do usuário no header
         const userName = document.getElementById('userName');
@@ -24,6 +40,11 @@ async function checkAuth() {
         const btnAdmin = document.getElementById('btnAdmin');
         if (btnAdmin && currentUser.isAdmin) {
             btnAdmin.style.display = 'block';
+        }
+
+        // Verificar se deve trocar senha (primeiro login)
+        if (deveTrocarSenha) {
+            mostrarModalTrocarSenhaObrigatorio();
         }
 
         return true;
@@ -141,6 +162,61 @@ window.logout = async function() {
         window.location.href = '/';
     }
 };
+
+// Mostrar modal de troca de senha obrigatória
+function mostrarModalTrocarSenhaObrigatorio() {
+    const modal = document.getElementById('modalTrocarSenhaObrigatorio');
+    if (!modal) return;
+
+    modal.classList.add('show');
+
+    // Configurar formulário
+    const form = document.getElementById('formTrocarSenhaObrigatorio');
+    if (!form) return;
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+
+        const senhaAtual = document.getElementById('senhaAtualObrig').value;
+        const senhaNova = document.getElementById('senhaNovaObrig').value;
+        const senhaConfirma = document.getElementById('senhaConfirmaObrig').value;
+
+        // Validar confirmação
+        if (senhaNova !== senhaConfirma) {
+            alert('❌ As senhas não coincidem!');
+            return;
+        }
+
+        // Validar senha forte
+        const validacao = validarSenhaForte(senhaNova);
+        if (!validacao.valida) {
+            alert('❌ ' + validacao.erro);
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/usuarios/minha-senha', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senhaAtual, novaSenha: senhaNova })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                alert('✅ Senha alterada com sucesso!\n\nVocê já pode usar sua nova senha.');
+                modal.classList.remove('show');
+                form.reset();
+                deveTrocarSenha = false;
+            } else {
+                alert('❌ ' + (data.error || 'Erro ao alterar senha'));
+            }
+        } catch (error) {
+            console.error('Erro ao alterar senha:', error);
+            alert('❌ Erro ao alterar senha. Tente novamente.');
+        }
+    };
+}
 
 // Inicializar quando a página carregar
 (async function() {

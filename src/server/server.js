@@ -120,8 +120,13 @@ app.post('/api/login', (req, res) => {
     console.log(`✅ Login bem-sucedido: ${usuario.nome} (${usuario.username})`);
     console.log(`🔧 Session ID: ${req.sessionID}`);
 
+    if (usuario.deve_trocar_senha === 1) {
+      console.log('⚠️  Usuário deve trocar senha no primeiro login');
+    }
+
     res.json({
       success: true,
+      deveTrocarSenha: usuario.deve_trocar_senha === 1,
       usuario: {
         id: usuario.id,
         nome: usuario.nome,
@@ -147,7 +152,7 @@ app.get('/api/session', (req, res) => {
     return res.json({ autenticado: false });
   }
 
-  const usuario = db.prepare('SELECT id, nome, username, is_admin FROM usuarios WHERE id = ?')
+  const usuario = db.prepare('SELECT id, nome, username, is_admin, deve_trocar_senha FROM usuarios WHERE id = ?')
     .get(req.session.userId);
 
   if (!usuario) {
@@ -157,6 +162,7 @@ app.get('/api/session', (req, res) => {
 
   res.json({
     autenticado: true,
+    deveTrocarSenha: usuario.deve_trocar_senha === 1,
     usuario: {
       id: usuario.id,
       nome: usuario.nome,
@@ -177,23 +183,44 @@ app.get('/api/usuarios', requireAdmin, (req, res) => {
   res.json(usuarios);
 });
 
-// Criar usuário
-app.post('/api/usuarios', requireAdmin, (req, res) => {
-  const { nome, username, senha } = req.body;
-
-  if (!nome || !username || !senha) {
-    return res.status(400).json({ error: 'Dados incompletos' });
+// Validação de senha forte
+function validarSenhaForte(senha) {
+  if (senha.length < 8) {
+    return { valida: false, erro: 'A senha deve ter no mínimo 8 caracteres' };
   }
 
-  const senhaHash = bcrypt.hashSync(senha, 10);
+  const temCaractereEspecial = /[!@#$%^&*(),.?":{}|<>_\-+=[\]\\/'`~]/.test(senha);
+  if (!temCaractereEspecial) {
+    return { valida: false, erro: 'A senha deve conter pelo menos um caractere especial (!@#$%&*...)' };
+  }
+
+  return { valida: true };
+}
+
+// Criar usuário
+app.post('/api/usuarios', requireAdmin, (req, res) => {
+  const { nome, username } = req.body;
+
+  if (!nome || !username) {
+    return res.status(400).json({ error: 'Nome e username são obrigatórios' });
+  }
+
+  // Senha padrão para novos usuários
+  const senhaPadrao = 'biblia1234';
+  const senhaHash = bcrypt.hashSync(senhaPadrao, 10);
 
   try {
     const result = db.prepare(`
-      INSERT INTO usuarios (nome, username, senha_hash, is_admin)
-      VALUES (?, ?, ?, 0)
+      INSERT INTO usuarios (nome, username, senha_hash, is_admin, deve_trocar_senha)
+      VALUES (?, ?, ?, 0, 1)
     `).run(nome, username, senhaHash);
 
-    res.json({ success: true, id: result.lastInsertRowid });
+    console.log(`✅ Usuário criado: ${username} (deve trocar senha no primeiro login)`);
+    res.json({
+      success: true,
+      id: result.lastInsertRowid,
+      senhaPadrao: senhaPadrao // Retornar para o admin informar ao usuário
+    });
   } catch (err) {
     if (err.message.includes('UNIQUE')) {
       res.status(400).json({ error: 'Nome de usuário já existe' });
@@ -228,8 +255,10 @@ app.post('/api/usuarios/minha-senha', requireAuth, (req, res) => {
     return res.status(400).json({ error: 'Senha atual e nova senha são obrigatórias' });
   }
 
-  if (novaSenha.length < 6) {
-    return res.status(400).json({ error: 'A nova senha deve ter pelo menos 6 caracteres' });
+  // Validar senha forte
+  const validacao = validarSenhaForte(novaSenha);
+  if (!validacao.valida) {
+    return res.status(400).json({ error: validacao.erro });
   }
 
   // Buscar usuário atual
@@ -244,11 +273,12 @@ app.post('/api/usuarios/minha-senha', requireAuth, (req, res) => {
     return res.status(401).json({ error: 'Senha atual incorreta' });
   }
 
-  // Atualizar senha
+  // Atualizar senha e resetar flag de trocar senha
   const senhaHash = bcrypt.hashSync(novaSenha, 10);
-  db.prepare('UPDATE usuarios SET senha_hash = ? WHERE id = ?')
+  db.prepare('UPDATE usuarios SET senha_hash = ?, deve_trocar_senha = 0 WHERE id = ?')
     .run(senhaHash, req.session.userId);
 
+  console.log(`✅ Senha alterada: ${usuario.username}`);
   res.json({ success: true });
 });
 

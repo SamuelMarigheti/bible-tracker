@@ -880,6 +880,16 @@ body {
     }
 }
 
+/* ==================== MODAL OBRIGATÓRIO ==================== */
+.modal-obrigatorio {
+    background: rgba(0, 0, 0, 0.9) !important;
+}
+
+.modal-obrigatorio .modal-content {
+    border: 3px solid #dc3545;
+    box-shadow: 0 10px 40px rgba(220, 53, 69, 0.4);
+}
+
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 1024px) {
     :root {

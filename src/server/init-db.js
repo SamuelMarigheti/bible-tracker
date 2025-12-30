@@ -27,6 +27,7 @@ db.exec(`
     username TEXT UNIQUE NOT NULL,
     senha_hash TEXT NOT NULL,
     is_admin INTEGER DEFAULT 0,
+    deve_trocar_senha INTEGER DEFAULT 0,
     criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
   );
 
@@ -52,6 +53,20 @@ db.exec(`
   CREATE INDEX IF NOT EXISTS idx_progresso_usuario ON progresso(usuario_id);
   CREATE INDEX IF NOT EXISTS idx_conquistas_usuario ON conquistas(usuario_id);
 `);
+
+// Migração: Adicionar coluna deve_trocar_senha se não existir
+try {
+  const columns = db.prepare("PRAGMA table_info(usuarios)").all();
+  const hasColumn = columns.some(col => col.name === 'deve_trocar_senha');
+
+  if (!hasColumn) {
+    console.log('🔧 Adicionando coluna deve_trocar_senha...');
+    db.exec('ALTER TABLE usuarios ADD COLUMN deve_trocar_senha INTEGER DEFAULT 0');
+    console.log('✅ Coluna adicionada com sucesso');
+  }
+} catch (err) {
+  console.log('ℹ️  Migração já aplicada ou erro:', err.message);
+}
 
 // Criar usuário admin padrão
 const senhaAdmin = 'Cristomesalvou@123##';
