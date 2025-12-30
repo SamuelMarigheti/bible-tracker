@@ -17,9 +17,6 @@ npm start
 
 Acesse: `http://localhost:3000`
 
-**Login inicial:**
-- Usuário: `admin`
-- Senha: `Cristomesalvou@123##`
 
 ## 📁 Estrutura do Projeto
 
