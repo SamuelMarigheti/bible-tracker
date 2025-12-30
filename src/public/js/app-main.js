@@ -13,6 +13,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         await carregarProgresso();
     }
 
+    // Carregar conquistas
+    await carregarConquistasDesbloqueadas();
+
     // Inicializar interface
     irParaDiaAtual();
     atualizarTodasEstatisticas();
@@ -276,6 +279,11 @@ function marcarDiaCompleto(completo) {
     atualizarTodasEstatisticas();
     criarCalendarioHeatmap();
     atualizarProgressoDia();
+
+    // Verificar novas conquistas quando completar um dia
+    if (completo) {
+        verificarNovasConquistas();
+    }
 }
 
 function marcarTodasReferencias() {
@@ -546,29 +554,108 @@ function configurarEventos() {
 }
 
 // ==================== MODAL CONQUISTAS ====================
+let conquistasDesbloqueadas = [];
+
+function obterConquistas() {
+    const diasCompletos = Object.values(progressoData.progresso).filter(v => v).length;
+
+    return [
+        { id: 'primeiro-dia', titulo: '🎯 Primeiro Dia', descricao: 'Complete o primeiro dia', requisito: 1, desbloqueada: diasCompletos >= 1 },
+        { id: 'uma-semana', titulo: '📅 Uma Semana', descricao: 'Complete 7 dias', requisito: 7, desbloqueada: diasCompletos >= 7 },
+        { id: 'um-mes', titulo: '🌟 Um Mês', descricao: 'Complete 30 dias', requisito: 30, desbloqueada: diasCompletos >= 30 },
+        { id: 'tres-meses', titulo: '🔥 Três Meses', descricao: 'Complete 90 dias', requisito: 90, desbloqueada: diasCompletos >= 90 },
+        { id: 'meio-ano', titulo: '💎 Meio Ano', descricao: 'Complete 180 dias', requisito: 180, desbloqueada: diasCompletos >= 180 },
+        { id: 'completo', titulo: '🏆 Jornada Completa!', descricao: 'Complete todos os 365 dias', requisito: 365, desbloqueada: diasCompletos === 365 }
+    ];
+}
+
+function verificarNovasConquistas() {
+    const conquistas = obterConquistas();
+    const novasConquistas = [];
+
+    conquistas.forEach(conquista => {
+        if (conquista.desbloqueada && !conquistasDesbloqueadas.includes(conquista.id)) {
+            novasConquistas.push(conquista);
+            conquistasDesbloqueadas.push(conquista.id);
+
+            // Salvar no backend
+            if (typeof salvarConquistas === 'function') {
+                salvarConquistas(conquista.id);
+            }
+        }
+    });
+
+    // Mostrar notificação para novas conquistas
+    novasConquistas.forEach((conquista, index) => {
+        setTimeout(() => {
+            mostrarNotificacaoConquista(conquista);
+        }, index * 500); // Delay entre múltiplas conquistas
+    });
+}
+
+function mostrarNotificacaoConquista(conquista) {
+    // Criar elemento de notificação
+    const notif = document.createElement('div');
+    notif.className = 'conquista-toast';
+    notif.innerHTML = `
+        <div class="conquista-toast-icon">
+            <i class="fas fa-trophy"></i>
+        </div>
+        <div class="conquista-toast-content">
+            <strong>Conquista Desbloqueada!</strong>
+            <p>${conquista.titulo}</p>
+        </div>
+    `;
+
+    document.body.appendChild(notif);
+
+    // Animar entrada
+    setTimeout(() => notif.classList.add('show'), 10);
+
+    // Remover após 4 segundos
+    setTimeout(() => {
+        notif.classList.remove('show');
+        setTimeout(() => notif.remove(), 300);
+    }, 4000);
+
+    // Som (opcional - pode comentar se não quiser)
+    try {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZSA0PVq3j78dpHgU7k9n0xXkkBSp+y/PajDwJEmGz6OylVBMJSJ3f8rhoHgU2jdLz0Hwm');
+        audio.volume = 0.3;
+        audio.play().catch(() => {}); // Ignorar erro se não puder tocar
+    } catch (e) {}
+}
+
 function abrirModalConquistas() {
     const modal = document.getElementById('modalConquistas');
     const container = document.getElementById('conquistasContainer');
-
-    const conquistas = [
-        { id: 'primeiro-dia', titulo: 'Primeiro Dia', descricao: 'Complete o primeiro dia', desbloqueada: progressoData.progresso[1] },
-        { id: 'uma-semana', titulo: 'Uma Semana', descricao: 'Complete 7 dias', desbloqueada: Object.values(progressoData.progresso).filter(v => v).length >= 7 },
-        { id: 'um-mes', titulo: 'Um Mês', descricao: 'Complete 30 dias', desbloqueada: Object.values(progressoData.progresso).filter(v => v).length >= 30 },
-        { id: 'tres-meses', titulo: 'Três Meses', descricao: 'Complete 90 dias', desbloqueada: Object.values(progressoData.progresso).filter(v => v).length >= 90 },
-        { id: 'meio-ano', titulo: 'Meio Ano', descricao: 'Complete 180 dias', desbloqueada: Object.values(progressoData.progresso).filter(v => v).length >= 180 },
-        { id: 'completo', titulo: 'Jornada Completa!', descricao: 'Complete todos os 365 dias', desbloqueada: Object.values(progressoData.progresso).filter(v => v).length === 365 }
-    ];
+    const conquistas = obterConquistas();
 
     container.innerHTML = conquistas.map(c => `
         <div class="conquista ${c.desbloqueada ? 'desbloqueada' : 'bloqueada'}">
-            <i class="fas fa-trophy"></i>
-            <h3>${c.titulo}</h3>
-            <p>${c.descricao}</p>
-            ${c.desbloqueada ? '<span class="badge">✓ Desbloqueada</span>' : '<span class="badge-locked">🔒 Bloqueada</span>'}
+            <div class="conquista-icon">
+                <i class="fas fa-trophy"></i>
+            </div>
+            <div class="conquista-info">
+                <h3>${c.titulo}</h3>
+                <p>${c.descricao}</p>
+                ${c.desbloqueada ?
+                    '<span class="conquista-badge desbloqueada">✓ Desbloqueada</span>' :
+                    `<span class="conquista-badge bloqueada">🔒 ${c.requisito} dias</span>`
+                }
+            </div>
         </div>
     `).join('');
 
     modal.classList.add('show');
+}
+
+// Carregar conquistas já desbloqueadas
+async function carregarConquistasDesbloqueadas() {
+    if (typeof carregarConquistas === 'function') {
+        const ids = await carregarConquistas();
+        conquistasDesbloqueadas = ids || [];
+    }
 }
 
 // ==================== UTILITÁRIOS ====================

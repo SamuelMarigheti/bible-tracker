@@ -786,6 +786,88 @@ body {
     cursor: pointer;
 }
 
+/* ==================== TOAST NOTIFICAÇÃO DE CONQUISTA ==================== */
+.conquista-toast {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, var(--dourado-escuro) 0%, var(--dourado) 100%);
+    color: white;
+    padding: 1.2rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4), 0 0 20px rgba(184, 134, 11, 0.5);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    z-index: 3000;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    max-width: 350px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.conquista-toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.conquista-toast-icon {
+    font-size: 2.5rem;
+    animation: pulse 1.5s infinite;
+}
+
+.conquista-toast-content {
+    flex: 1;
+}
+
+.conquista-toast-content strong {
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    margin-bottom: 0.3rem;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.conquista-toast-content p {
+    margin: 0;
+    font-size: 0.95rem;
+    opacity: 0.95;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+/* Responsividade para mobile */
+@media (max-width: 768px) {
+    .conquista-toast {
+        top: auto;
+        bottom: 80px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        padding: 1rem;
+    }
+
+    .conquista-toast-icon {
+        font-size: 2rem;
+    }
+
+    .conquista-toast-content strong {
+        font-size: 1rem;
+    }
+
+    .conquista-toast-content p {
+        font-size: 0.85rem;
+    }
+}
+
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 1024px) {
     :root {
@@ -807,6 +889,9 @@ body {
 
     .sidebar {
         transform: translateX(-100%);
+        padding: 1.5rem 1rem;
+        max-height: 100vh;
+        overflow-y: auto;
     }
 
     .sidebar.show {
@@ -815,6 +900,42 @@ body {
 
     .btn-close-sidebar {
         display: block;
+    }
+
+    /* Otimizar sidebar para mobile */
+    .stats-grid {
+        gap: 0.8rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+        padding: 0.8rem;
+    }
+
+    .stat-value {
+        font-size: 1.8rem;
+    }
+
+    .stat-label {
+        font-size: 0.85rem;
+    }
+
+    .progresso-anual {
+        margin-bottom: 1.5rem;
+    }
+
+    .progresso-anual h3 {
+        font-size: 1rem;
+        margin-bottom: 0.8rem;
+    }
+
+    .sidebar-actions {
+        gap: 0.8rem;
+    }
+
+    .btn-action {
+        padding: 0.7rem 1rem;
+        font-size: 0.9rem;
     }
 
     .main-content {
