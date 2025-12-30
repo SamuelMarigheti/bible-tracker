@@ -2,6 +2,57 @@
 let currentUser = null;
 let deveTrocarSenha = false;
 
+// ==================== TIMEOUT DE SESSÃO ====================
+const TEMPO_INATIVIDADE = 30 * 60 * 1000; // 30 minutos em milissegundos
+const TEMPO_AVISO = 2 * 60 * 1000; // Avisar 2 minutos antes
+let timeoutInatividade = null;
+let timeoutAviso = null;
+let ultimaAtividade = Date.now();
+
+// Atualizar última atividade
+function atualizarAtividade() {
+    ultimaAtividade = Date.now();
+    resetarTimeouts();
+}
+
+// Resetar os timeouts
+function resetarTimeouts() {
+    // Limpar timeouts anteriores
+    if (timeoutInatividade) clearTimeout(timeoutInatividade);
+    if (timeoutAviso) clearTimeout(timeoutAviso);
+
+    // Aviso 2 minutos antes
+    timeoutAviso = setTimeout(() => {
+        if (confirm('⚠️ Sua sessão vai expirar em 2 minutos por inatividade.\n\nClique OK para continuar conectado.')) {
+            atualizarAtividade();
+        }
+    }, TEMPO_INATIVIDADE - TEMPO_AVISO);
+
+    // Logout automático após 30 minutos
+    timeoutInatividade = setTimeout(() => {
+        alert('🔒 Sua sessão expirou por inatividade.\n\nVocê será redirecionado para a tela de login.');
+        logout(true); // true = não perguntar confirmação
+    }, TEMPO_INATIVIDADE);
+}
+
+// Detectar atividade do usuário
+function iniciarDeteccaoAtividade() {
+    const eventos = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+
+    eventos.forEach(evento => {
+        document.addEventListener(evento, () => {
+            const agora = Date.now();
+            // Só atualizar se passou mais de 1 minuto desde a última atividade (evitar sobrecarga)
+            if (agora - ultimaAtividade > 60000) {
+                atualizarAtividade();
+            }
+        }, { passive: true });
+    });
+
+    // Iniciar timeouts
+    resetarTimeouts();
+}
+
 // Validar senha forte
 function validarSenhaForte(senha) {
     if (senha.length < 8) {
@@ -156,8 +207,8 @@ window.carregarConquistas = async function() {
 };
 
 // Função de logout
-window.logout = async function() {
-    if (confirm('Tem certeza que deseja sair?')) {
+window.logout = async function(forcarSaida = false) {
+    if (forcarSaida || confirm('Tem certeza que deseja sair?')) {
         await fetch('/api/logout', { method: 'POST' });
         window.location.href = '/';
     }
@@ -222,6 +273,9 @@ function mostrarModalTrocarSenhaObrigatorio() {
 (async function() {
     const isAuth = await checkAuth();
     if (isAuth) {
+        // Iniciar detecção de atividade para timeout de sessão
+        iniciarDeteccaoAtividade();
+
         // Aguardar carregamento do DOM
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', async () => {

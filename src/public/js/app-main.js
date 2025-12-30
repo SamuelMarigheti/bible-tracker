@@ -6,6 +6,26 @@ let progressoData = {
     stats: { totalDias: 365, diasLidos: 0, streak: 0 }
 };
 
+// Cache de elementos DOM para performance
+const domCache = {};
+function getCachedElement(id) {
+    if (!domCache[id]) {
+        domCache[id] = document.getElementById(id);
+    }
+    return domCache[id];
+}
+
+// Debounce para salvar progresso (evitar múltiplas chamadas)
+let salvarProgressoTimeout = null;
+function salvarProgressoDebounced() {
+    if (salvarProgressoTimeout) clearTimeout(salvarProgressoTimeout);
+    salvarProgressoTimeout = setTimeout(() => {
+        if (typeof salvarProgresso === 'function') {
+            salvarProgresso();
+        }
+    }, 500); // Aguardar 500ms antes de salvar
+}
+
 // ==================== INICIALIZAÇÃO ====================
 document.addEventListener('DOMContentLoaded', async () => {
     // Carregar dados do backend
@@ -53,8 +73,8 @@ function exibirDia(dia) {
     diaAtual = Math.max(1, Math.min(365, dia));
 
     // Atualizar número do dia
-    document.getElementById('numeroDia').textContent = diaAtual;
-    document.getElementById('diaAtualStat').textContent = diaAtual;
+    getCachedElement('numeroDia').textContent = diaAtual;
+    getCachedElement('diaAtualStat').textContent = diaAtual;
 
     // Buscar dados do dia no planoLeitura
     const dadosDia = planoLeitura.find(d => d.dia === diaAtual);
@@ -64,7 +84,7 @@ function exibirDia(dia) {
     }
 
     // Atualizar checkbox
-    const checkbox = document.getElementById('diaCompleto');
+    const checkbox = getCachedElement('diaCompleto');
     checkbox.checked = progressoData.progresso[diaAtual] || false;
 
     // Atualizar progresso do dia
@@ -75,8 +95,7 @@ function exibirDia(dia) {
 }
 
 function exibirReferencias(referencias) {
-    const container = document.getElementById('referencias');
-    container.innerHTML = '';
+    const container = getCachedElement('referencias');
 
     // Resetar contexto do último livro ao trocar de dia
     if (typeof resetarUltimoLivro === 'function') {
@@ -85,6 +104,9 @@ function exibirReferencias(referencias) {
 
     // Recuperar referências lidas deste dia
     const referenciasLidas = progressoData.referenciasLidas[diaAtual] || [];
+
+    // Usar DocumentFragment para melhor performance
+    const fragment = document.createDocumentFragment();
 
     referencias.forEach((ref, index) => {
         const div = document.createElement('div');
@@ -108,88 +130,33 @@ function exibirReferencias(referencias) {
             toggleReferenciaLida(index);
         });
 
-        // Variável para controlar se está mostrando tooltip
-        let tooltipTimeout = null;
-        let isShowingTooltip = false;
-
-        // Evento de toque (mobile) - mostrar tooltip sem marcar
-        div.addEventListener('touchstart', (e) => {
-            // Se tocar no checkbox, deixar o comportamento normal
+        // Clique no item inteiro (desktop e mobile) - marcar/desmarcar leitura
+        div.addEventListener('click', (e) => {
+            // Se clicou no checkbox, deixar o comportamento nativo
             if (e.target === checkbox) return;
 
-            // Prevenir clique duplo
-            e.preventDefault();
-
-            // Cancelar timeout anterior se existir
-            if (tooltipTimeout) {
-                clearTimeout(tooltipTimeout);
-            }
-
-            // Marcar que está mostrando tooltip
-            isShowingTooltip = true;
-
-            // Simular tooltip visual no mobile
-            const livroSpan = div.querySelector('.livro-ref');
-            if (livroSpan && livroSpan.dataset.tooltip) {
-                // Criar tooltip temporário
-                const tooltip = document.createElement('div');
-                tooltip.className = 'mobile-tooltip';
-                tooltip.textContent = livroSpan.dataset.tooltip;
-                tooltip.style.cssText = 'position: fixed; background: var(--marrom-escuro); color: white; padding: 0.5rem 1rem; border-radius: 8px; z-index: 9999; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3); pointer-events: none;';
-
-                // Posicionar próximo ao toque
-                const touch = e.touches[0];
-                tooltip.style.left = touch.clientX + 'px';
-                tooltip.style.top = (touch.clientY - 60) + 'px';
-
-                document.body.appendChild(tooltip);
-
-                // Remover após 2 segundos
-                tooltipTimeout = setTimeout(() => {
-                    tooltip.remove();
-                    isShowingTooltip = false;
-                }, 2000);
-
-                return; // Não marcar como lido
-            }
-
-            // Se não tem tooltip, aguardar um pouco para diferenciar de tap rápido
-            tooltipTimeout = setTimeout(() => {
-                isShowingTooltip = false;
-            }, 300);
-        });
-
-        // Evento de fim do toque - marcar apenas se não estiver mostrando tooltip
-        div.addEventListener('touchend', (e) => {
-            if (e.target === checkbox) return;
-
-            e.preventDefault();
-
-            // Se estava mostrando tooltip, não marcar
-            if (isShowingTooltip) {
+            // Se clicou na abreviação do livro, mostrar nome completo
+            if (e.target.classList.contains('livro-ref')) {
+                const tooltip = e.target.dataset.tooltip;
+                if (tooltip) {
+                    alert(tooltip);
+                }
                 return;
             }
 
-            // Marcar como lido apenas se foi um toque rápido
+            // Caso contrário, toggle da leitura
             checkbox.checked = !checkbox.checked;
             toggleReferenciaLida(index);
         });
 
-        // Evento de clique (desktop) - marcar normalmente
-        div.addEventListener('click', (e) => {
-            // Ignorar se for touch device (já tratado acima)
-            if ('ontouchstart' in window) return;
-
-            if (e.target !== checkbox) {
-                checkbox.checked = !checkbox.checked;
-                toggleReferenciaLida(index);
-            }
-        });
-
         div.appendChild(checkbox);
         div.appendChild(textSpan);
-        container.appendChild(div);
+        fragment.appendChild(div);
     });
+
+    // Limpar container e adicionar tudo de uma vez (melhor performance)
+    container.innerHTML = '';
+    container.appendChild(fragment);
 
     // Atualizar contador
     atualizarContadorReferencias();
@@ -215,7 +182,7 @@ function toggleReferenciaLida(index) {
 
     atualizarContadorReferencias();
     atualizarProgressoDia();
-    salvarProgresso();
+    salvarProgressoDebounced(); // Usar debounced para evitar múltiplas chamadas
     verificarDiaCompleto();
 }
 
@@ -223,11 +190,11 @@ function atualizarContadorReferencias() {
     const total = document.querySelectorAll('.ref-item').length;
     const lidas = (progressoData.referenciasLidas[diaAtual] || []).length;
 
-    document.getElementById('contadorTotal').textContent = total;
-    document.getElementById('contadorLidas').textContent = lidas;
+    getCachedElement('contadorTotal').textContent = total;
+    getCachedElement('contadorLidas').textContent = lidas;
 
     // Atualizar texto do botão
-    const btnMarcarTodos = document.getElementById('btnMarcarTodos');
+    const btnMarcarTodos = getCachedElement('btnMarcarTodos');
     if (btnMarcarTodos) {
         if (lidas === total && total > 0) {
             btnMarcarTodos.innerHTML = '<i class="fas fa-times-circle"></i> Desmarcar Todos';
@@ -242,8 +209,8 @@ function atualizarProgressoDia() {
     const lidas = (progressoData.referenciasLidas[diaAtual] || []).length;
     const percentual = totalRefs > 0 ? Math.round((lidas / totalRefs) * 100) : 0;
 
-    const barraDia = document.getElementById('barraDia');
-    const percentualDia = document.getElementById('percentualDia');
+    const barraDia = getCachedElement('barraDia');
+    const percentualDia = getCachedElement('percentualDia');
 
     if (barraDia && percentualDia) {
         barraDia.style.width = percentual + '%';
@@ -254,7 +221,7 @@ function atualizarProgressoDia() {
 function verificarDiaCompleto() {
     const totalRefs = document.querySelectorAll('.ref-item').length;
     const lidas = (progressoData.referenciasLidas[diaAtual] || []).length;
-    const checkbox = document.getElementById('diaCompleto');
+    const checkbox = getCachedElement('diaCompleto');
 
     if (totalRefs > 0 && lidas === totalRefs) {
         checkbox.checked = true;
@@ -304,7 +271,7 @@ function marcarTodasReferencias() {
 
     atualizarContadorReferencias();
     atualizarProgressoDia();
-    salvarProgresso();
+    salvarProgressoDebounced(); // Usar debounced para evitar múltiplas chamadas
     verificarDiaCompleto();
 }
 
@@ -316,12 +283,12 @@ function atualizarTodasEstatisticas() {
     const sequencia = calcularSequencia();
 
     // Atualizar interface
-    document.getElementById('completosStat').textContent = diasCompletos;
-    document.getElementById('restantesStat').textContent = diasRestantes;
-    document.getElementById('sequenciaStat').textContent = sequencia;
+    getCachedElement('completosStat').textContent = diasCompletos;
+    getCachedElement('restantesStat').textContent = diasRestantes;
+    getCachedElement('sequenciaStat').textContent = sequencia;
 
-    const barraAnual = document.getElementById('barraAnual');
-    const percentualAnualEl = document.getElementById('percentualAnual');
+    const barraAnual = getCachedElement('barraAnual');
+    const percentualAnualEl = getCachedElement('percentualAnual');
     barraAnual.style.width = percentualAnual + '%';
     percentualAnualEl.textContent = percentualAnual + '%';
 }
@@ -514,8 +481,19 @@ function configurarEventos() {
         exibirDia(diaAtual + 1);
     });
 
-    // Checkbox de conclusão
+    // Checkbox de conclusão - validar antes de permitir marcar
     document.getElementById('diaCompleto').addEventListener('change', (e) => {
+        const totalRefs = document.querySelectorAll('.ref-item').length;
+        const lidas = (progressoData.referenciasLidas[diaAtual] || []).length;
+
+        // Se está tentando marcar como completo, mas nem todas as leituras foram marcadas
+        if (e.target.checked && lidas < totalRefs) {
+            e.target.checked = false; // Desmarcar
+            alert(`❌ Você precisa marcar todas as ${totalRefs} leituras antes de concluir o dia!\n\nLeituras marcadas: ${lidas}/${totalRefs}`);
+            return;
+        }
+
+        // Se pode marcar ou está desmarcando
         marcarDiaCompleto(e.target.checked);
     });
 
