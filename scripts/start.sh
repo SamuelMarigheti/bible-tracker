@@ -33,16 +33,7 @@ if [ ! -f "biblia.db" ]; then
     if [ $? -ne 0 ]; then
         echo "❌ Erro ao criar banco de dados"
         exit 1
-    fi
-    echo ""
-    echo "════════════════════════════════════════"
-    echo "  CREDENCIAIS DE ACESSO"
-    echo "════════════════════════════════════════"
-    echo "  Usuário: admin"
-    echo "  Senha:   admin123"
-    echo "════════════════════════════════════════"
-    echo "⚠️  Troque a senha após o primeiro login!"
-    echo ""
+    fi   
 fi
 
 echo ""

@@ -90,6 +90,23 @@
                 <h1><i class="fas fa-book-bible"></i> Plano de Leitura Bíblica</h1>
                 <p class="data-atual" id="dataAtual">Carregando...</p>
             </div>
+            <div class="header-user">
+                <span class="user-name" id="userName">Usuário</span>
+                <button class="btn-user-menu" id="btnUserMenu">
+                    <i class="fas fa-user-circle"></i>
+                </button>
+                <div class="user-dropdown" id="userDropdown">
+                    <button class="dropdown-item" id="btnTrocarSenha">
+                        <i class="fas fa-key"></i> Trocar Senha
+                    </button>
+                    <button class="dropdown-item" id="btnAdmin" style="display: none;">
+                        <i class="fas fa-shield-halved"></i> Painel Admin
+                    </button>
+                    <button class="dropdown-item" id="btnSair">
+                        <i class="fas fa-sign-out-alt"></i> Sair
+                    </button>
+                </div>
+            </div>
         </header>
 
         <!-- Card do Dia Atual -->
@@ -116,19 +133,30 @@
 
             <!-- Referências Bíblicas -->
             <div class="referencias-container">
-                <h3>Leituras do Dia</h3>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h3 style="margin: 0;">Leituras do Dia</h3>
+                    <button class="btn-marcar-todos" id="btnMarcarTodos">
+                        <i class="fas fa-check-double"></i> Marcar Todos
+                    </button>
+                </div>
                 <div class="referencias" id="referencias">
                     <!-- Preenchido via JavaScript -->
                 </div>
             </div>
 
-            <!-- Checkbox Concluir -->
+            <!-- Progresso das Leituras -->
             <div class="concluir-container">
-                <label class="checkbox-label">
-                    <input type="checkbox" id="diaCompleto">
-                    <span class="checkbox-custom"></span>
-                    <span>Marcar dia como completo</span>
-                </label>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: var(--branco-suave); border: 2px solid var(--dourado); border-radius: 8px;">
+                    <span style="font-weight: 600;">
+                        <i class="fas fa-list-check"></i>
+                        Progresso: <span id="contadorLidas">0</span>/<span id="contadorTotal">0</span> leituras
+                    </span>
+                    <label class="checkbox-label">
+                        <input type="checkbox" id="diaCompleto">
+                        <span class="checkbox-custom"></span>
+                        <span>Dia completo</span>
+                    </label>
+                </div>
             </div>
         </section>
 
@@ -158,6 +186,43 @@
             </button>
             <h2><i class="fas fa-trophy"></i> Conquistas</h2>
             <div id="conquistasContainer"></div>
+        </div>
+    </div>
+
+    <!-- Modal Trocar Senha -->
+    <div class="modal" id="modalTrocarSenha">
+        <div class="modal-content">
+            <button class="modal-close" id="closeTrocarSenha">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2><i class="fas fa-key"></i> Trocar Senha</h2>
+            <form id="formTrocarSenha" style="max-width: 400px; margin: 20px auto;">
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Senha Atual</label>
+                    <input type="password" id="senhaAtual" required minlength="6"
+                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Nova Senha</label>
+                    <input type="password" id="senhaNova" required minlength="6"
+                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: bold;">Confirmar Nova Senha</label>
+                    <input type="password" id="senhaConfirma" required minlength="6"
+                           style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="document.getElementById('closeTrocarSenha').click()"
+                            style="padding: 10px 20px; background: #ccc; border: none; border-radius: 4px; cursor: pointer;">
+                        Cancelar
+                    </button>
+                    <button type="submit"
+                            style="padding: 10px 20px; background: #8B4513; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                        <i class="fas fa-save"></i> Salvar
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 

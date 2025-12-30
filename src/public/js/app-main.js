@@ -1,7 +1,8 @@
 // ==================== VARIÁVEIS GLOBAIS ====================
 let diaAtual = 1;
 let progressoData = {
-    progresso: {},
+    progresso: {}, // { dia: { completo: bool, referencias: [] } }
+    referenciasLidas: {}, // { dia: [indices das refs lidas] }
     stats: { totalDias: 365, diasLidos: 0, streak: 0 }
 };
 
@@ -74,29 +75,159 @@ function exibirReferencias(referencias) {
     const container = document.getElementById('referencias');
     container.innerHTML = '';
 
-    referencias.forEach(ref => {
+    // Resetar contexto do último livro ao trocar de dia
+    if (typeof resetarUltimoLivro === 'function') {
+        resetarUltimoLivro();
+    }
+
+    // Recuperar referências lidas deste dia
+    const referenciasLidas = progressoData.referenciasLidas[diaAtual] || [];
+
+    referencias.forEach((ref, index) => {
         const div = document.createElement('div');
         div.className = 'ref-item';
-        div.innerHTML = formatarReferencia(ref);
+        if (referenciasLidas.includes(index)) {
+            div.classList.add('lida');
+        }
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'ref-checkbox';
+        checkbox.checked = referenciasLidas.includes(index);
+        checkbox.dataset.index = index;
+
+        const textSpan = document.createElement('span');
+        textSpan.className = 'ref-text';
+        textSpan.innerHTML = formatarReferencia(ref);
+
+        // Evento de clique no checkbox
+        checkbox.addEventListener('change', () => {
+            toggleReferenciaLida(index);
+        });
+
+        // Evento de clique no item inteiro
+        div.addEventListener('click', (e) => {
+            if (e.target !== checkbox) {
+                checkbox.checked = !checkbox.checked;
+                toggleReferenciaLida(index);
+            }
+        });
+
+        div.appendChild(checkbox);
+        div.appendChild(textSpan);
         container.appendChild(div);
     });
 
-    // Adicionar tooltips
-    if (typeof adicionarTooltips === 'function') {
-        adicionarTooltips();
+    // Atualizar contador
+    atualizarContadorReferencias();
+}
+
+function toggleReferenciaLida(index) {
+    if (!progressoData.referenciasLidas[diaAtual]) {
+        progressoData.referenciasLidas[diaAtual] = [];
+    }
+
+    const refIndex = progressoData.referenciasLidas[diaAtual].indexOf(index);
+    const refItem = document.querySelector(`.ref-checkbox[data-index="${index}"]`)?.parentElement;
+
+    if (refIndex > -1) {
+        // Remover
+        progressoData.referenciasLidas[diaAtual].splice(refIndex, 1);
+        refItem?.classList.remove('lida');
+    } else {
+        // Adicionar
+        progressoData.referenciasLidas[diaAtual].push(index);
+        refItem?.classList.add('lida');
+    }
+
+    atualizarContadorReferencias();
+    atualizarProgressoDia();
+    salvarProgresso();
+    verificarDiaCompleto();
+}
+
+function atualizarContadorReferencias() {
+    const total = document.querySelectorAll('.ref-item').length;
+    const lidas = (progressoData.referenciasLidas[diaAtual] || []).length;
+
+    document.getElementById('contadorTotal').textContent = total;
+    document.getElementById('contadorLidas').textContent = lidas;
+
+    // Atualizar texto do botão
+    const btnMarcarTodos = document.getElementById('btnMarcarTodos');
+    if (btnMarcarTodos) {
+        if (lidas === total && total > 0) {
+            btnMarcarTodos.innerHTML = '<i class="fas fa-times-circle"></i> Desmarcar Todos';
+        } else {
+            btnMarcarTodos.innerHTML = '<i class="fas fa-check-double"></i> Marcar Todos';
+        }
     }
 }
 
 function atualizarProgressoDia() {
     const totalRefs = document.querySelectorAll('.ref-item').length;
-    const lidas = progressoData.progresso[diaAtual] ? totalRefs : 0;
+    const lidas = (progressoData.referenciasLidas[diaAtual] || []).length;
     const percentual = totalRefs > 0 ? Math.round((lidas / totalRefs) * 100) : 0;
 
     const barraDia = document.getElementById('barraDia');
     const percentualDia = document.getElementById('percentualDia');
 
-    barraDia.style.width = percentual + '%';
-    percentualDia.textContent = percentual + '%';
+    if (barraDia && percentualDia) {
+        barraDia.style.width = percentual + '%';
+        percentualDia.textContent = percentual + '%';
+    }
+}
+
+function verificarDiaCompleto() {
+    const totalRefs = document.querySelectorAll('.ref-item').length;
+    const lidas = (progressoData.referenciasLidas[diaAtual] || []).length;
+    const checkbox = document.getElementById('diaCompleto');
+
+    if (totalRefs > 0 && lidas === totalRefs) {
+        checkbox.checked = true;
+        if (!progressoData.progresso[diaAtual]) {
+            marcarDiaCompleto(true);
+        }
+    } else if (lidas === 0) {
+        checkbox.checked = false;
+        if (progressoData.progresso[diaAtual]) {
+            marcarDiaCompleto(false);
+        }
+    }
+}
+
+function marcarDiaCompleto(completo) {
+    progressoData.progresso[diaAtual] = completo;
+
+    if (typeof salvarProgresso === 'function') {
+        salvarProgresso();
+    }
+
+    atualizarTodasEstatisticas();
+    criarCalendarioHeatmap();
+    atualizarProgressoDia();
+}
+
+function marcarTodasReferencias() {
+    const totalRefs = document.querySelectorAll('.ref-item').length;
+    const jaTodasLidas = (progressoData.referenciasLidas[diaAtual] || []).length === totalRefs;
+
+    if (jaTodasLidas) {
+        // Desmarcar todas
+        progressoData.referenciasLidas[diaAtual] = [];
+        document.querySelectorAll('.ref-checkbox').forEach(cb => cb.checked = false);
+        document.querySelectorAll('.ref-item').forEach(item => item.classList.remove('lida'));
+    } else {
+        // Marcar todas
+        progressoData.referenciasLidas[diaAtual] = Array.from({length: totalRefs}, (_, i) => i);
+        document.querySelectorAll('.ref-checkbox').forEach(cb => cb.checked = true);
+        document.querySelectorAll('.ref-item').forEach(item => item.classList.add('lida'));
+    }
+
+    atualizarContadorReferencias();
+    atualizarProgressoDia();
+    salvarProgresso();
+    verificarDiaCompleto();
 }
 
 // ==================== ESTATÍSTICAS ====================
@@ -185,15 +316,12 @@ function configurarEventos() {
 
     // Checkbox de conclusão
     document.getElementById('diaCompleto').addEventListener('change', (e) => {
-        progressoData.progresso[diaAtual] = e.target.checked;
+        marcarDiaCompleto(e.target.checked);
+    });
 
-        if (typeof salvarProgresso === 'function') {
-            salvarProgresso();
-        }
-
-        atualizarTodasEstatisticas();
-        criarCalendarioHeatmap();
-        atualizarProgressoDia();
+    // Botão marcar todos
+    document.getElementById('btnMarcarTodos')?.addEventListener('click', () => {
+        marcarTodasReferencias();
     });
 
     // Menu mobile
@@ -270,3 +398,149 @@ function carregarProgresso() {
         }
     }
 }
+
+// ==================== MENU DE USUÁRIO ====================
+function configurarMenuUsuario() {
+    const btnUserMenu = document.getElementById('btnUserMenu');
+    const userDropdown = document.getElementById('userDropdown');
+    const btnSair = document.getElementById('btnSair');
+    const btnTrocarSenha = document.getElementById('btnTrocarSenha');
+    const btnAdmin = document.getElementById('btnAdmin');
+    const modalTrocarSenha = document.getElementById('modalTrocarSenha');
+    const closeTrocarSenha = document.getElementById('closeTrocarSenha');
+    const formTrocarSenha = document.getElementById('formTrocarSenha');
+
+    // Toggle dropdown
+    btnUserMenu?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userDropdown.classList.toggle('show');
+    });
+
+    // Fechar dropdown ao clicar fora
+    document.addEventListener('click', (e) => {
+        if (!e.target.closest('.header-user')) {
+            userDropdown?.classList.remove('show');
+        }
+    });
+
+    // Botão sair
+    btnSair?.addEventListener('click', async () => {
+        if (confirm('Deseja realmente sair?')) {
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (response.ok) {
+                    window.location.href = '/';
+                } else {
+                    alert('Erro ao sair. Tente novamente.');
+                }
+            } catch (error) {
+                console.error('Erro ao fazer logout:', error);
+                // Mesmo com erro, redireciona
+                window.location.href = '/';
+            }
+        }
+    });
+
+    // Botão trocar senha
+    btnTrocarSenha?.addEventListener('click', () => {
+        userDropdown.classList.remove('show');
+        modalTrocarSenha.classList.add('show');
+    });
+
+    // Botão admin (se for admin)
+    btnAdmin?.addEventListener('click', () => {
+        window.location.href = '/admin';
+    });
+
+    // Fechar modal trocar senha
+    closeTrocarSenha?.addEventListener('click', () => {
+        modalTrocarSenha.classList.remove('show');
+        formTrocarSenha.reset();
+    });
+
+    // Submit form trocar senha
+    formTrocarSenha?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const senhaAtual = document.getElementById('senhaAtual').value;
+        const senhaNova = document.getElementById('senhaNova').value;
+        const senhaConfirma = document.getElementById('senhaConfirma').value;
+
+        // Validar confirmação
+        if (senhaNova !== senhaConfirma) {
+            alert('A nova senha e a confirmação não coincidem!');
+            return;
+        }
+
+        try {
+            // Primeiro, verificar a senha atual fazendo login
+            const loginResponse = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    username: window.currentUser.username,
+                    senha: senhaAtual
+                })
+            });
+
+            if (!loginResponse.ok) {
+                alert('Senha atual incorreta!');
+                return;
+            }
+
+            // Se a senha está correta, atualizar
+            const updateResponse = await fetch(`/api/usuarios/${window.currentUser.id}/senha`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ novaSenha: senhaNova })
+            });
+
+            if (updateResponse.ok) {
+                alert('Senha alterada com sucesso!');
+                modalTrocarSenha.classList.remove('show');
+                formTrocarSenha.reset();
+            } else {
+                const error = await updateResponse.json();
+                alert('Erro ao trocar senha: ' + (error.error || 'Erro desconhecido'));
+            }
+        } catch (error) {
+            console.error('Erro ao trocar senha:', error);
+            alert('Erro ao trocar senha. Tente novamente.');
+        }
+    });
+
+    // Carregar nome do usuário
+    carregarDadosUsuario();
+}
+
+async function carregarDadosUsuario() {
+    try {
+        const response = await fetch('/api/session');
+        const data = await response.json();
+
+        if (data.autenticado && data.usuario) {
+            window.currentUser = data.usuario;
+            document.getElementById('userName').textContent = data.usuario.nome || data.usuario.username;
+
+            // Mostrar botão admin se for admin
+            if (data.usuario.isAdmin) {
+                document.getElementById('btnAdmin').style.display = 'flex';
+            }
+        } else {
+            // Não autenticado, redirecionar
+            window.location.href = '/';
+        }
+    } catch (error) {
+        console.error('Erro ao carregar dados do usuário:', error);
+        window.location.href = '/';
+    }
+}
+
+// Adicionar configuração do menu de usuário à inicialização
+document.addEventListener('DOMContentLoaded', () => {
+    configurarMenuUsuario();
+});
