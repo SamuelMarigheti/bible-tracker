@@ -335,94 +335,149 @@ function calcularSequencia() {
 }
 
 // ==================== CALENDÁRIO MENSAL ====================
+let mesAtualCalendario = new Date().getMonth();
+let anoAtualCalendario = new Date().getFullYear();
+
+function inicializarSeletoresCalendario() {
+    // Preencher seletor de ano (ano atual ± 2 anos)
+    const seletorAno = document.getElementById('seletorAno');
+    const anoAtual = new Date().getFullYear();
+
+    for (let ano = anoAtual - 2; ano <= anoAtual + 2; ano++) {
+        const option = document.createElement('option');
+        option.value = ano;
+        option.textContent = ano;
+        if (ano === anoAtual) option.selected = true;
+        seletorAno.appendChild(option);
+    }
+
+    // Selecionar mês atual
+    document.getElementById('seletorMes').value = mesAtualCalendario;
+    document.getElementById('seletorAno').value = anoAtualCalendario;
+
+    // Eventos de mudança
+    document.getElementById('seletorMes').addEventListener('change', (e) => {
+        mesAtualCalendario = parseInt(e.target.value);
+        renderizarMesCalendario();
+    });
+
+    document.getElementById('seletorAno').addEventListener('change', (e) => {
+        anoAtualCalendario = parseInt(e.target.value);
+        renderizarMesCalendario();
+    });
+
+    // Eventos das setas
+    document.getElementById('btnMesAnterior').addEventListener('click', () => {
+        mesAtualCalendario--;
+        if (mesAtualCalendario < 0) {
+            mesAtualCalendario = 11;
+            anoAtualCalendario--;
+        }
+        atualizarSeletoresCalendario();
+        renderizarMesCalendario();
+    });
+
+    document.getElementById('btnMesProximo').addEventListener('click', () => {
+        mesAtualCalendario++;
+        if (mesAtualCalendario > 11) {
+            mesAtualCalendario = 0;
+            anoAtualCalendario++;
+        }
+        atualizarSeletoresCalendario();
+        renderizarMesCalendario();
+    });
+}
+
+function atualizarSeletoresCalendario() {
+    document.getElementById('seletorMes').value = mesAtualCalendario;
+    document.getElementById('seletorAno').value = anoAtualCalendario;
+}
+
 function criarCalendarioHeatmap() {
+    // Inicializar seletores
+    inicializarSeletoresCalendario();
+
+    // Renderizar mês atual
+    renderizarMesCalendario();
+}
+
+function renderizarMesCalendario() {
     const container = document.getElementById('heatmap');
     container.innerHTML = '';
 
-    // Criar calendário para o ano atual
-    const anoAtual = new Date().getFullYear();
-    const meses = [
-        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ];
     const diasSemana = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
-    for (let mes = 0; mes < 12; mes++) {
-        // Container do mês
-        const mesDiv = document.createElement('div');
-        mesDiv.className = 'mes-container';
+    // Container do mês
+    const mesDiv = document.createElement('div');
+    mesDiv.className = 'mes-container-unico';
 
-        // Header do mês
-        const mesHeader = document.createElement('div');
-        mesHeader.className = 'mes-header';
-        mesHeader.textContent = meses[mes];
-        mesDiv.appendChild(mesHeader);
+    // Grid do calendário
+    const gridDiv = document.createElement('div');
+    gridDiv.className = 'mes-grid';
 
-        // Grid do calendário
-        const gridDiv = document.createElement('div');
-        gridDiv.className = 'mes-grid';
+    // Adicionar cabeçalho dos dias da semana
+    diasSemana.forEach(dia => {
+        const diaHeader = document.createElement('div');
+        diaHeader.className = 'dia-semana-header';
+        diaHeader.textContent = dia;
+        gridDiv.appendChild(diaHeader);
+    });
 
-        // Adicionar cabeçalho dos dias da semana
-        diasSemana.forEach(dia => {
-            const diaHeader = document.createElement('div');
-            diaHeader.className = 'dia-semana-header';
-            diaHeader.textContent = dia;
-            gridDiv.appendChild(diaHeader);
+    // Obter primeiro dia do mês e quantos dias tem
+    const primeiroDia = new Date(anoAtualCalendario, mesAtualCalendario, 1);
+    const ultimoDia = new Date(anoAtualCalendario, mesAtualCalendario + 1, 0);
+    const diasNoMes = ultimoDia.getDate();
+    const primeiroDiaSemana = primeiroDia.getDay(); // 0 = Domingo
+
+    // Adicionar espaços vazios antes do primeiro dia
+    for (let i = 0; i < primeiroDiaSemana; i++) {
+        const vazio = document.createElement('div');
+        vazio.className = 'dia-vazio';
+        gridDiv.appendChild(vazio);
+    }
+
+    // Adicionar os dias do mês
+    for (let diaDoMes = 1; diaDoMes <= diasNoMes; diaDoMes++) {
+        const diaDiv = document.createElement('div');
+        diaDiv.className = 'dia-mes';
+
+        // Calcular dia do ano (1-365)
+        const dataAtual = new Date(anoAtualCalendario, mesAtualCalendario, diaDoMes);
+        const inicioDoAno = new Date(anoAtualCalendario, 0, 1);
+        const diaDoAno = Math.floor((dataAtual - inicioDoAno) / (1000 * 60 * 60 * 24)) + 1;
+
+        diaDiv.dataset.dia = diaDoAno;
+        diaDiv.textContent = diaDoMes;
+
+        // Verificar se o dia foi concluído
+        const concluido = progressoData.progresso[diaDoAno];
+        if (concluido) {
+            diaDiv.classList.add('concluido');
+        }
+
+        // Destacar dia atual
+        const hoje = new Date();
+        if (dataAtual.toDateString() === hoje.toDateString()) {
+            diaDiv.classList.add('hoje');
+        }
+
+        // Tooltip
+        diaDiv.title = `Dia ${diaDoAno} do plano - ${diaDoMes}/${mesAtualCalendario + 1}/${anoAtualCalendario}`;
+
+        // Evento de clique
+        diaDiv.addEventListener('click', () => {
+            exibirDia(diaDoAno);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         });
 
-        // Obter primeiro dia do mês e quantos dias tem
-        const primeiroDia = new Date(anoAtual, mes, 1);
-        const ultimoDia = new Date(anoAtual, mes + 1, 0);
-        const diasNoMes = ultimoDia.getDate();
-        const primeiroDiaSemana = primeiroDia.getDay(); // 0 = Domingo
-
-        // Adicionar espaços vazios antes do primeiro dia
-        for (let i = 0; i < primeiroDiaSemana; i++) {
-            const vazio = document.createElement('div');
-            vazio.className = 'dia-vazio';
-            gridDiv.appendChild(vazio);
-        }
-
-        // Adicionar os dias do mês
-        for (let diaDoMes = 1; diaDoMes <= diasNoMes; diaDoMes++) {
-            const diaDiv = document.createElement('div');
-            diaDiv.className = 'dia-mes';
-
-            // Calcular dia do ano (1-365)
-            const dataAtual = new Date(anoAtual, mes, diaDoMes);
-            const inicioDoAno = new Date(anoAtual, 0, 1);
-            const diaDoAno = Math.floor((dataAtual - inicioDoAno) / (1000 * 60 * 60 * 24)) + 1;
-
-            diaDiv.dataset.dia = diaDoAno;
-            diaDiv.textContent = diaDoMes;
-
-            // Verificar se o dia foi concluído
-            const concluido = progressoData.progresso[diaDoAno];
-            if (concluido) {
-                diaDiv.classList.add('concluido');
-            }
-
-            // Destacar dia atual
-            const hoje = new Date();
-            if (dataAtual.toDateString() === hoje.toDateString()) {
-                diaDiv.classList.add('hoje');
-            }
-
-            // Tooltip
-            diaDiv.title = `Dia ${diaDoAno} do plano - ${diaDoMes}/${mes + 1}`;
-
-            // Evento de clique
-            diaDiv.addEventListener('click', () => {
-                exibirDia(diaDoAno);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            });
-
-            gridDiv.appendChild(diaDiv);
-        }
-
-        mesDiv.appendChild(gridDiv);
-        container.appendChild(mesDiv);
+        gridDiv.appendChild(diaDiv);
     }
+
+    mesDiv.appendChild(gridDiv);
+    container.appendChild(mesDiv);
+
+    // Atualizar destaque do dia selecionado
+    destacarDiaNoHeatmap(diaAtual);
 }
 
 function destacarDiaNoHeatmap(dia) {

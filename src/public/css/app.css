@@ -561,31 +561,87 @@ body {
     margin-bottom: 1.5rem;
 }
 
+/* Controles de Navegação do Calendário */
+.calendario-controles {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+}
+
+.btn-nav-mes {
+    background: linear-gradient(135deg, var(--marrom) 0%, var(--marrom-escuro) 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 10px var(--sombra);
+    font-size: 1.2rem;
+}
+
+.btn-nav-mes:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px var(--sombra);
+    background: linear-gradient(135deg, var(--marrom-medio) 0%, var(--marrom) 100%);
+}
+
+.btn-nav-mes:active {
+    transform: translateY(0);
+}
+
+.seletores-data {
+    display: flex;
+    gap: 0.8rem;
+    align-items: center;
+}
+
+.seletor-calendario {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    padding: 0.6rem 1rem;
+    border: 2px solid var(--marrom);
+    border-radius: 8px;
+    background: var(--branco-suave);
+    color: var(--marrom);
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 600;
+    outline: none;
+}
+
+.seletor-calendario:hover {
+    border-color: var(--dourado);
+    box-shadow: 0 2px 8px var(--sombra);
+}
+
+.seletor-calendario:focus {
+    border-color: var(--dourado);
+    box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.2);
+}
+
 .heatmap {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
+    display: flex;
+    justify-content: center;
     margin-bottom: 1rem;
 }
 
-/* Container de cada mês */
-.mes-container {
+/* Container do mês único (visível) */
+.mes-container-unico {
     background: var(--branco-suave);
     border: 2px solid var(--marrom);
     border-radius: 10px;
-    padding: 1rem;
+    padding: 1.5rem;
     box-shadow: 0 4px 10px var(--sombra);
-}
-
-.mes-header {
-    font-family: 'Cinzel', serif;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--marrom);
-    text-align: center;
-    margin-bottom: 0.8rem;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid var(--dourado);
+    max-width: 500px;
+    width: 100%;
 }
 
 .mes-grid {
@@ -665,15 +721,24 @@ body {
 .heatmap-legend {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 1.5rem;
     justify-content: center;
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
 }
 
-.legend-item {
-    width: 15px;
-    height: 15px;
-    border-radius: 3px;
+.legenda-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.legend-box {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    background: #f0f0f0;
 }
 
 /* ==================== MODAL ==================== */
@@ -772,17 +837,29 @@ body {
         margin-top: 10px;
     }
 
-    .heatmap {
-        grid-template-columns: 1fr;
-        gap: 1rem;
+    .calendario-controles {
+        gap: 0.8rem;
     }
 
-    .mes-container {
-        padding: 0.8rem;
-    }
-
-    .mes-header {
+    .btn-nav-mes {
+        width: 40px;
+        height: 40px;
         font-size: 1rem;
+    }
+
+    .seletores-data {
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .seletor-calendario {
+        font-size: 0.95rem;
+        padding: 0.5rem 0.8rem;
+    }
+
+    .mes-container-unico {
+        padding: 1rem;
     }
 
     .dia-mes {
@@ -792,6 +869,16 @@ body {
 
     .dia-semana-header {
         font-size: 0.7rem;
+    }
+
+    .heatmap-legend {
+        gap: 1rem;
+        font-size: 0.8rem;
+    }
+
+    .legend-box {
+        width: 16px;
+        height: 16px;
     }
 }
 

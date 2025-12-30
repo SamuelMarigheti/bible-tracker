@@ -168,20 +168,60 @@
             </div>
         </section>
 
-        <!-- Calendário Heatmap -->
+        <!-- Calendário Mensal -->
         <section class="calendario-section">
             <h2><i class="fas fa-calendar"></i> Calendário do Ano</h2>
+
+            <!-- Controles de Navegação -->
+            <div class="calendario-controles">
+                <button class="btn-nav-mes" id="btnMesAnterior" title="Mês anterior">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+
+                <div class="seletores-data">
+                    <select id="seletorMes" class="seletor-calendario">
+                        <option value="0">Janeiro</option>
+                        <option value="1">Fevereiro</option>
+                        <option value="2">Março</option>
+                        <option value="3">Abril</option>
+                        <option value="4">Maio</option>
+                        <option value="5">Junho</option>
+                        <option value="6">Julho</option>
+                        <option value="7">Agosto</option>
+                        <option value="8">Setembro</option>
+                        <option value="9">Outubro</option>
+                        <option value="10">Novembro</option>
+                        <option value="11">Dezembro</option>
+                    </select>
+                    <select id="seletorAno" class="seletor-calendario">
+                        <!-- Preenchido via JavaScript -->
+                    </select>
+                </div>
+
+                <button class="btn-nav-mes" id="btnMesProximo" title="Próximo mês">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Container do Calendário -->
             <div class="heatmap" id="heatmap">
                 <!-- Preenchido via JavaScript -->
             </div>
+
+            <!-- Legenda -->
             <div class="heatmap-legend">
-                <span>Menos</span>
-                <div class="legend-item" style="background: #eee"></div>
-                <div class="legend-item" style="background: #c6e48b"></div>
-                <div class="legend-item" style="background: #7bc96f"></div>
-                <div class="legend-item" style="background: #239a3b"></div>
-                <div class="legend-item" style="background: #196127"></div>
-                <span>Mais</span>
+                <div class="legenda-item">
+                    <div class="legend-box" style="background: #f0f0f0; border: 2px solid #ddd;"></div>
+                    <span>Não lido</span>
+                </div>
+                <div class="legenda-item">
+                    <div class="legend-box" style="background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%); border: 2px solid #1e8449;"></div>
+                    <span>Concluído</span>
+                </div>
+                <div class="legenda-item">
+                    <div class="legend-box" style="border: 3px solid var(--dourado);"></div>
+                    <span>Hoje</span>
+                </div>
             </div>
         </section>
     </main>
