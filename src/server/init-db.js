@@ -57,7 +57,7 @@ try {
   console.log('✅ Banco de dados inicializado!');
   console.log('📝 Usuário admin criado:');
   console.log('   Username: admin');
-  console.log('   Senha: admin123');
+  console.log('   Senha: Cristomesalvou@123##');
   console.log('⚠️  IMPORTANTE: Troque a senha do admin após o primeiro login!');
 } catch (err) {
   console.log('ℹ️  Banco de dados já existe');
