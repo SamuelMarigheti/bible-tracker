@@ -105,8 +105,78 @@ function exibirReferencias(referencias) {
             toggleReferenciaLida(index);
         });
 
-        // Evento de clique no item inteiro
+        // Variável para controlar se está mostrando tooltip
+        let tooltipTimeout = null;
+        let isShowingTooltip = false;
+
+        // Evento de toque (mobile) - mostrar tooltip sem marcar
+        div.addEventListener('touchstart', (e) => {
+            // Se tocar no checkbox, deixar o comportamento normal
+            if (e.target === checkbox) return;
+
+            // Prevenir clique duplo
+            e.preventDefault();
+
+            // Cancelar timeout anterior se existir
+            if (tooltipTimeout) {
+                clearTimeout(tooltipTimeout);
+            }
+
+            // Marcar que está mostrando tooltip
+            isShowingTooltip = true;
+
+            // Simular tooltip visual no mobile
+            const livroSpan = div.querySelector('.livro-ref');
+            if (livroSpan && livroSpan.dataset.tooltip) {
+                // Criar tooltip temporário
+                const tooltip = document.createElement('div');
+                tooltip.className = 'mobile-tooltip';
+                tooltip.textContent = livroSpan.dataset.tooltip;
+                tooltip.style.cssText = 'position: fixed; background: var(--marrom-escuro); color: white; padding: 0.5rem 1rem; border-radius: 8px; z-index: 9999; font-size: 0.9rem; box-shadow: 0 4px 10px rgba(0,0,0,0.3); pointer-events: none;';
+
+                // Posicionar próximo ao toque
+                const touch = e.touches[0];
+                tooltip.style.left = touch.clientX + 'px';
+                tooltip.style.top = (touch.clientY - 60) + 'px';
+
+                document.body.appendChild(tooltip);
+
+                // Remover após 2 segundos
+                tooltipTimeout = setTimeout(() => {
+                    tooltip.remove();
+                    isShowingTooltip = false;
+                }, 2000);
+
+                return; // Não marcar como lido
+            }
+
+            // Se não tem tooltip, aguardar um pouco para diferenciar de tap rápido
+            tooltipTimeout = setTimeout(() => {
+                isShowingTooltip = false;
+            }, 300);
+        });
+
+        // Evento de fim do toque - marcar apenas se não estiver mostrando tooltip
+        div.addEventListener('touchend', (e) => {
+            if (e.target === checkbox) return;
+
+            e.preventDefault();
+
+            // Se estava mostrando tooltip, não marcar
+            if (isShowingTooltip) {
+                return;
+            }
+
+            // Marcar como lido apenas se foi um toque rápido
+            checkbox.checked = !checkbox.checked;
+            toggleReferenciaLida(index);
+        });
+
+        // Evento de clique (desktop) - marcar normalmente
         div.addEventListener('click', (e) => {
+            // Ignorar se for touch device (já tratado acima)
+            if ('ontouchstart' in window) return;
+
             if (e.target !== checkbox) {
                 checkbox.checked = !checkbox.checked;
                 toggleReferenciaLida(index);
@@ -264,42 +334,109 @@ function calcularSequencia() {
     return maxSequencia;
 }
 
-// ==================== CALENDÁRIO HEATMAP ====================
+// ==================== CALENDÁRIO MENSAL ====================
 function criarCalendarioHeatmap() {
     const container = document.getElementById('heatmap');
     container.innerHTML = '';
 
-    for (let dia = 1; dia <= 365; dia++) {
-        const div = document.createElement('div');
-        div.className = 'heatmap-day';
-        div.dataset.dia = dia;
-        div.title = `Dia ${dia}`;
+    // Criar calendário para o ano atual
+    const anoAtual = new Date().getFullYear();
+    const meses = [
+        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    const diasSemana = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
 
-        // Determinar nível (cor)
-        const concluido = progressoData.progresso[dia];
-        div.classList.add(concluido ? 'level-4' : 'level-0');
+    for (let mes = 0; mes < 12; mes++) {
+        // Container do mês
+        const mesDiv = document.createElement('div');
+        mesDiv.className = 'mes-container';
 
-        // Evento de clique
-        div.addEventListener('click', () => {
-            exibirDia(dia);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Header do mês
+        const mesHeader = document.createElement('div');
+        mesHeader.className = 'mes-header';
+        mesHeader.textContent = meses[mes];
+        mesDiv.appendChild(mesHeader);
+
+        // Grid do calendário
+        const gridDiv = document.createElement('div');
+        gridDiv.className = 'mes-grid';
+
+        // Adicionar cabeçalho dos dias da semana
+        diasSemana.forEach(dia => {
+            const diaHeader = document.createElement('div');
+            diaHeader.className = 'dia-semana-header';
+            diaHeader.textContent = dia;
+            gridDiv.appendChild(diaHeader);
         });
 
-        container.appendChild(div);
+        // Obter primeiro dia do mês e quantos dias tem
+        const primeiroDia = new Date(anoAtual, mes, 1);
+        const ultimoDia = new Date(anoAtual, mes + 1, 0);
+        const diasNoMes = ultimoDia.getDate();
+        const primeiroDiaSemana = primeiroDia.getDay(); // 0 = Domingo
+
+        // Adicionar espaços vazios antes do primeiro dia
+        for (let i = 0; i < primeiroDiaSemana; i++) {
+            const vazio = document.createElement('div');
+            vazio.className = 'dia-vazio';
+            gridDiv.appendChild(vazio);
+        }
+
+        // Adicionar os dias do mês
+        for (let diaDoMes = 1; diaDoMes <= diasNoMes; diaDoMes++) {
+            const diaDiv = document.createElement('div');
+            diaDiv.className = 'dia-mes';
+
+            // Calcular dia do ano (1-365)
+            const dataAtual = new Date(anoAtual, mes, diaDoMes);
+            const inicioDoAno = new Date(anoAtual, 0, 1);
+            const diaDoAno = Math.floor((dataAtual - inicioDoAno) / (1000 * 60 * 60 * 24)) + 1;
+
+            diaDiv.dataset.dia = diaDoAno;
+            diaDiv.textContent = diaDoMes;
+
+            // Verificar se o dia foi concluído
+            const concluido = progressoData.progresso[diaDoAno];
+            if (concluido) {
+                diaDiv.classList.add('concluido');
+            }
+
+            // Destacar dia atual
+            const hoje = new Date();
+            if (dataAtual.toDateString() === hoje.toDateString()) {
+                diaDiv.classList.add('hoje');
+            }
+
+            // Tooltip
+            diaDiv.title = `Dia ${diaDoAno} do plano - ${diaDoMes}/${mes + 1}`;
+
+            // Evento de clique
+            diaDiv.addEventListener('click', () => {
+                exibirDia(diaDoAno);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            gridDiv.appendChild(diaDiv);
+        }
+
+        mesDiv.appendChild(gridDiv);
+        container.appendChild(mesDiv);
     }
 }
 
 function destacarDiaNoHeatmap(dia) {
     // Remover destaque anterior
-    document.querySelectorAll('.heatmap-day').forEach(el => {
-        el.style.border = 'none';
+    document.querySelectorAll('.dia-mes').forEach(el => {
+        el.classList.remove('selecionado');
     });
 
     // Adicionar destaque ao dia atual
-    const diaEl = document.querySelector(`.heatmap-day[data-dia="${dia}"]`);
+    const diaEl = document.querySelector(`.dia-mes[data-dia="${dia}"]`);
     if (diaEl) {
-        diaEl.style.border = '2px solid #ff6b6b';
-        diaEl.style.transform = 'scale(1.2)';
+        diaEl.classList.add('selecionado');
+        // Scroll suave até o mês do dia
+        diaEl.closest('.mes-container')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 }
 

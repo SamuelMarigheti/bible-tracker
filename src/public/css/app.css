@@ -563,32 +563,104 @@ body {
 
 .heatmap {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(18px, 1fr));
-    gap: 4px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
     margin-bottom: 1rem;
 }
 
-.heatmap-day {
-    width: 18px;
-    height: 18px;
-    background: #eee;
-    border-radius: 3px;
+/* Container de cada mês */
+.mes-container {
+    background: var(--branco-suave);
+    border: 2px solid var(--marrom);
+    border-radius: 10px;
+    padding: 1rem;
+    box-shadow: 0 4px 10px var(--sombra);
+}
+
+.mes-header {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--marrom);
+    text-align: center;
+    margin-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--dourado);
+}
+
+.mes-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.dia-semana-header {
+    font-size: 0.75rem;
+    font-weight: bold;
+    color: var(--marrom);
+    text-align: center;
+    padding: 0.3rem 0;
+    opacity: 0.7;
+}
+
+.dia-vazio {
+    height: 35px;
+}
+
+.dia-mes {
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f0f0;
+    border: 2px solid #ddd;
+    border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #666;
     position: relative;
 }
 
-.heatmap-day:hover {
-    transform: scale(1.3);
+.dia-mes:hover {
+    transform: scale(1.15);
     z-index: 10;
-    box-shadow: 0 2px 8px var(--sombra);
+    box-shadow: 0 4px 12px var(--sombra);
+    border-color: var(--dourado);
 }
 
-.heatmap-day.level-0 { background: #eee; }
-.heatmap-day.level-1 { background: #c6e48b; }
-.heatmap-day.level-2 { background: #7bc96f; }
-.heatmap-day.level-3 { background: #239a3b; }
-.heatmap-day.level-4 { background: #196127; }
+.dia-mes.concluido {
+    background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%);
+    border-color: #1e8449;
+    color: white;
+}
+
+.dia-mes.concluido:hover {
+    background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%);
+}
+
+.dia-mes.hoje {
+    border: 3px solid var(--dourado);
+    box-shadow: 0 0 12px rgba(184, 134, 11, 0.6);
+}
+
+.dia-mes.selecionado {
+    border: 3px solid #ff6b6b;
+    box-shadow: 0 0 15px rgba(255, 107, 107, 0.6);
+    transform: scale(1.1);
+    z-index: 11;
+}
+
+/* Badge para dias especiais */
+.dia-mes.concluido::after {
+    content: '✓';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    font-size: 0.7rem;
+    opacity: 0.8;
+}
 
 .heatmap-legend {
     display: flex;
@@ -701,13 +773,25 @@ body {
     }
 
     .heatmap {
-        grid-template-columns: repeat(auto-fill, minmax(12px, 1fr));
-        gap: 3px;
+        grid-template-columns: 1fr;
+        gap: 1rem;
     }
 
-    .heatmap-day {
-        width: 12px;
-        height: 12px;
+    .mes-container {
+        padding: 0.8rem;
+    }
+
+    .mes-header {
+        font-size: 1rem;
+    }
+
+    .dia-mes {
+        height: 30px;
+        font-size: 0.8rem;
+    }
+
+    .dia-semana-header {
+        font-size: 0.7rem;
     }
 }
 
