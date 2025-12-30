@@ -312,10 +312,15 @@ function calcularSequencia() {
 // ==================== CALENDÁRIO MENSAL ====================
 let mesAtualCalendario = new Date().getMonth();
 let anoAtualCalendario = new Date().getFullYear();
+let calendarioInicializado = false; // Flag para garantir inicialização única
 
-function inicializarSeletoresCalendario() {
+function inicializarEventosCalendario() {
+    // Garantir que eventos sejam registrados apenas uma vez
+    if (calendarioInicializado) return;
+    calendarioInicializado = true;
+
     // Preencher seletor de ano (ano atual -2 até 2050 para uso de longo prazo)
-    const seletorAno = document.getElementById('seletorAno');
+    const seletorAno = getCachedElement('seletorAno');
     const anoAtual = new Date().getFullYear();
 
     for (let ano = anoAtual - 2; ano <= 2050; ano++) {
@@ -327,22 +332,22 @@ function inicializarSeletoresCalendario() {
     }
 
     // Selecionar mês atual
-    document.getElementById('seletorMes').value = mesAtualCalendario;
-    document.getElementById('seletorAno').value = anoAtualCalendario;
+    getCachedElement('seletorMes').value = mesAtualCalendario;
+    getCachedElement('seletorAno').value = anoAtualCalendario;
 
-    // Eventos de mudança
-    document.getElementById('seletorMes').addEventListener('change', (e) => {
+    // Eventos de mudança dos seletores
+    getCachedElement('seletorMes').addEventListener('change', (e) => {
         mesAtualCalendario = parseInt(e.target.value);
         renderizarMesCalendario();
     });
 
-    document.getElementById('seletorAno').addEventListener('change', (e) => {
+    getCachedElement('seletorAno').addEventListener('change', (e) => {
         anoAtualCalendario = parseInt(e.target.value);
         renderizarMesCalendario();
     });
 
-    // Eventos das setas
-    document.getElementById('btnMesAnterior').addEventListener('click', () => {
+    // Eventos das setas de navegação
+    getCachedElement('btnMesAnterior').addEventListener('click', () => {
         mesAtualCalendario--;
         if (mesAtualCalendario < 0) {
             mesAtualCalendario = 11;
@@ -352,7 +357,7 @@ function inicializarSeletoresCalendario() {
         renderizarMesCalendario();
     });
 
-    document.getElementById('btnMesProximo').addEventListener('click', () => {
+    getCachedElement('btnMesProximo').addEventListener('click', () => {
         mesAtualCalendario++;
         if (mesAtualCalendario > 11) {
             mesAtualCalendario = 0;
@@ -364,20 +369,20 @@ function inicializarSeletoresCalendario() {
 }
 
 function atualizarSeletoresCalendario() {
-    document.getElementById('seletorMes').value = mesAtualCalendario;
-    document.getElementById('seletorAno').value = anoAtualCalendario;
+    getCachedElement('seletorMes').value = mesAtualCalendario;
+    getCachedElement('seletorAno').value = anoAtualCalendario;
 }
 
 function criarCalendarioHeatmap() {
-    // Inicializar seletores
-    inicializarSeletoresCalendario();
+    // Inicializar eventos APENAS na primeira vez
+    inicializarEventosCalendario();
 
-    // Renderizar mês atual
+    // Renderizar mês atual (pode ser chamado múltiplas vezes)
     renderizarMesCalendario();
 }
 
 function renderizarMesCalendario() {
-    const container = document.getElementById('heatmap');
+    const container = getCachedElement('heatmap');
     container.innerHTML = '';
 
     const diasSemana = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
