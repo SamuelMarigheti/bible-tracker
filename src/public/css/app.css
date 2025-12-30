@@ -947,15 +947,84 @@ body {
         display: block;
     }
 
+    /* Header mobile otimizado - compacto e profissional */
     .header {
-        flex-wrap: wrap;
+        padding: 0.8rem;
+        margin-bottom: 1rem;
+        border-radius: 8px;
+        border-width: 2px;
+        gap: 0.5rem;
+    }
+
+    .header h1 {
+        font-size: 1.1rem !important;
+        margin-bottom: 0.2rem;
+        line-height: 1.2;
+    }
+
+    .header h1 i {
+        font-size: 1rem;
+    }
+
+    .data-atual {
+        font-size: 0.7rem !important;
+        opacity: 0.8;
+    }
+
+    .btn-menu {
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+        padding: 0;
+        flex-shrink: 0;
     }
 
     .header-user {
-        order: 3;
-        width: 100%;
-        justify-content: flex-end;
-        margin-top: 10px;
+        flex-shrink: 0;
+    }
+
+    .header-user > div > div {
+        gap: 0.4rem !important;
+    }
+
+    .header-user #btnUserMenu i {
+        font-size: 1.3rem !important;
+    }
+
+    .header-user small {
+        display: none; /* Esconder hint em mobile */
+    }
+
+    #btnSairQuick {
+        padding: 0.35rem 0.6rem !important;
+        font-size: 0.7rem !important;
+        gap: 0.2rem !important;
+    }
+
+    #btnSairQuick i {
+        font-size: 0.7rem;
+    }
+
+    .user-dropdown {
+        right: 0;
+        top: 45px;
+    }
+
+    /* Card do dia mais compacto para mobile */
+    .card-dia {
+        padding: 1.2rem 0.9rem;
+        margin-bottom: 1.2rem;
+        border-radius: 10px;
+        border-width: 2px;
+    }
+
+    .dia-header {
+        margin-bottom: 1rem;
+        padding-bottom: 0.8rem;
+    }
+
+    .dia-header h2 {
+        font-size: 1.3rem;
     }
 
     .calendario-controles {
@@ -1004,21 +1073,22 @@ body {
 }
 
 @media (max-width: 480px) {
-    .header {
-        padding: 1.5rem 1rem;
+    .header h1 {
+        font-size: 1rem !important;
     }
 
-    .card-dia {
-        padding: 1.5rem 1rem;
+    .data-atual {
+        font-size: 0.65rem !important;
     }
 
     .dia-header h2 {
-        font-size: 1.3rem;
+        font-size: 1.2rem;
     }
 
     .btn-nav {
-        width: 38px;
-        height: 38px;
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
     }
 }
 
