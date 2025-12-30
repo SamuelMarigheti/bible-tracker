@@ -31,9 +31,13 @@ const db = new Database(dbPath);
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Verificar se o banco tem dados
-const userCount = db.prepare('SELECT COUNT(*) as count FROM usuarios').get();
-console.log(`👥 Usuários no banco: ${userCount.count}`);
+// Verificar se o banco tem dados (após inicialização)
+try {
+  const userCount = db.prepare('SELECT COUNT(*) as count FROM usuarios').get();
+  console.log(`👥 Usuários no banco: ${userCount.count}`);
+} catch (error) {
+  console.log('⚠️  Banco ainda não inicializado (será criado pelo init-db)');
+}
 
 // Middleware
 app.use(express.json());

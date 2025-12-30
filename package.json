@@ -5,10 +5,10 @@
   "main": "src/server/server.js",
   "type": "module",
   "scripts": {
-    "start": "node src/server/server.js",
+    "start": "npm run init-db && node src/server/server.js",
     "dev": "node --watch src/server/server.js",
     "init-db": "node src/server/init-db.js",
-    "build": "npm run init-db",
+    "build": "echo 'Build complete'",
     "postinstall": "echo 'Dependencies installed'"
   },
   "keywords": [
