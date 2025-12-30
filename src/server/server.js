@@ -294,6 +294,25 @@ app.post('/api/progresso', requireAuth, (req, res) => {
   res.json({ success: true });
 });
 
+// Limpar todo progresso do usuário (Novo Ciclo)
+app.post('/api/progresso/limpar', requireAuth, (req, res) => {
+  try {
+    console.log(`🔄 Limpando progresso do usuário: ${req.session.userId}`);
+
+    // Deletar progresso
+    db.prepare('DELETE FROM progresso WHERE usuario_id = ?').run(req.session.userId);
+
+    // Deletar conquistas
+    db.prepare('DELETE FROM conquistas WHERE usuario_id = ?').run(req.session.userId);
+
+    console.log('✅ Progresso e conquistas limpos com sucesso');
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ Erro ao limpar progresso:', error);
+    res.status(500).json({ error: 'Erro ao limpar progresso' });
+  }
+});
+
 // Obter progresso de todos os usuários (ADMIN)
 app.get('/api/progresso/todos', requireAdmin, (req, res) => {
   const progressos = db.prepare(`

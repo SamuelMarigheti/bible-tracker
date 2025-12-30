@@ -76,6 +76,9 @@
             <button class="btn-action" id="btnConquistas">
                 <i class="fas fa-trophy"></i> Conquistas
             </button>
+            <button class="btn-action btn-action-warning" id="btnNovoCiclo">
+                <i class="fas fa-rotate"></i> Novo Ciclo
+            </button>
         </div>
     </aside>
 
@@ -271,6 +274,67 @@
                     </button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Modal Novo Ciclo -->
+    <div class="modal" id="modalNovoCiclo">
+        <div class="modal-content">
+            <button class="modal-close" id="closeNovoCiclo">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2><i class="fas fa-rotate"></i> Iniciar Novo Ciclo de Leitura</h2>
+
+            <div style="max-width: 500px; margin: 20px auto;">
+                <div style="background: #fff3cd; border: 2px solid #ffc107; border-radius: 8px; padding: 1.2rem; margin-bottom: 1.5rem;">
+                    <p style="margin: 0; color: #856404; line-height: 1.6;">
+                        <i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i>
+                        <strong>Atenção:</strong> Ao iniciar um novo ciclo, todo o seu progresso atual será apagado.
+                        Esta ação não pode ser desfeita!
+                    </p>
+                </div>
+
+                <div style="background: var(--branco-suave); border: 2px solid var(--dourado); border-radius: 8px; padding: 1.2rem; margin-bottom: 1.5rem;">
+                    <h3 style="margin: 0 0 1rem 0; color: var(--marrom); font-size: 1.1rem;">
+                        <i class="fas fa-chart-line"></i> Seu Progresso Atual:
+                    </h3>
+                    <div style="display: grid; gap: 0.8rem;">
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: white; border-radius: 4px;">
+                            <span>Dias Completos:</span>
+                            <strong id="modalDiasCompletos">0</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: white; border-radius: 4px;">
+                            <span>Progresso Anual:</span>
+                            <strong id="modalProgressoAnual">0%</strong>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.5rem; background: white; border-radius: 4px;">
+                            <span>Conquistas:</span>
+                            <strong id="modalConquistas">0</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 1.5rem;">
+                    <button id="btnExportarAntes"
+                            style="width: 100%; padding: 1rem; background: linear-gradient(135deg, var(--dourado-escuro), var(--dourado)); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                        <i class="fas fa-download"></i> Exportar Progresso Atual (PDF)
+                    </button>
+                    <small style="display: block; text-align: center; margin-top: 0.5rem; opacity: 0.7;">
+                        Recomendado: salve seu progresso antes de limpar
+                    </small>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" id="btnCancelarNovoCiclo"
+                            style="padding: 12px 24px; background: #6c757d; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        Cancelar
+                    </button>
+                    <button type="button" id="btnConfirmarNovoCiclo"
+                            style="padding: 12px 24px; background: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                        <i class="fas fa-trash-alt"></i> Limpar e Iniciar Novo Ciclo
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 

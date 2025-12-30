@@ -347,11 +347,11 @@ let mesAtualCalendario = new Date().getMonth();
 let anoAtualCalendario = new Date().getFullYear();
 
 function inicializarSeletoresCalendario() {
-    // Preencher seletor de ano (ano atual ± 2 anos)
+    // Preencher seletor de ano (ano atual -2 até 2050 para uso de longo prazo)
     const seletorAno = document.getElementById('seletorAno');
     const anoAtual = new Date().getFullYear();
 
-    for (let ano = anoAtual - 2; ano <= anoAtual + 2; ano++) {
+    for (let ano = anoAtual - 2; ano <= 2050; ano++) {
         const option = document.createElement('option');
         option.value = ano;
         option.textContent = ano;
@@ -551,6 +551,27 @@ function configurarEventos() {
     document.getElementById('closeConquistas').addEventListener('click', () => {
         document.getElementById('modalConquistas').classList.remove('show');
     });
+
+    // Novo Ciclo
+    document.getElementById('btnNovoCiclo').addEventListener('click', () => {
+        abrirModalNovoCiclo();
+    });
+
+    document.getElementById('closeNovoCiclo').addEventListener('click', () => {
+        document.getElementById('modalNovoCiclo').classList.remove('show');
+    });
+
+    document.getElementById('btnCancelarNovoCiclo').addEventListener('click', () => {
+        document.getElementById('modalNovoCiclo').classList.remove('show');
+    });
+
+    document.getElementById('btnExportarAntes').addEventListener('click', () => {
+        window.print();
+    });
+
+    document.getElementById('btnConfirmarNovoCiclo').addEventListener('click', () => {
+        confirmarNovoCiclo();
+    });
 }
 
 // ==================== MODAL CONQUISTAS ====================
@@ -655,6 +676,68 @@ async function carregarConquistasDesbloqueadas() {
     if (typeof carregarConquistas === 'function') {
         const ids = await carregarConquistas();
         conquistasDesbloqueadas = ids || [];
+    }
+}
+
+// ==================== MODAL NOVO CICLO ====================
+function abrirModalNovoCiclo() {
+    const modal = document.getElementById('modalNovoCiclo');
+
+    // Calcular estatísticas atuais
+    const diasCompletos = Object.values(progressoData.progresso).filter(v => v).length;
+    const progressoAnual = Math.round((diasCompletos / 365) * 100);
+    const numConquistas = conquistasDesbloqueadas.length;
+
+    // Preencher modal
+    document.getElementById('modalDiasCompletos').textContent = diasCompletos;
+    document.getElementById('modalProgressoAnual').textContent = progressoAnual + '%';
+    document.getElementById('modalConquistas').textContent = numConquistas;
+
+    modal.classList.add('show');
+}
+
+async function confirmarNovoCiclo() {
+    // Confirmar ação
+    const confirmacao = confirm(
+        'Você tem certeza que deseja limpar TODO o seu progresso?\n\n' +
+        'Esta ação é PERMANENTE e não pode ser desfeita!\n\n' +
+        'Recomendamos exportar seu progresso antes de continuar.'
+    );
+
+    if (!confirmacao) return;
+
+    try {
+        // Chamar API para limpar progresso
+        const response = await fetch('/api/progresso/limpar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        });
+
+        if (!response.ok) {
+            throw new Error('Erro ao limpar progresso');
+        }
+
+        // Limpar dados locais
+        progressoData = {
+            progresso: {},
+            referenciasLidas: {},
+            stats: { totalDias: 365, diasLidos: 0, streak: 0 }
+        };
+
+        conquistasDesbloqueadas = [];
+
+        // Atualizar interface
+        document.getElementById('modalNovoCiclo').classList.remove('show');
+        irParaDiaAtual();
+        atualizarTodasEstatisticas();
+        criarCalendarioHeatmap();
+
+        // Mostrar mensagem de sucesso
+        alert('✅ Novo ciclo iniciado com sucesso!\n\nTodo o progresso foi limpo. Boa leitura!');
+
+    } catch (error) {
+        console.error('Erro ao limpar progresso:', error);
+        alert('❌ Erro ao limpar progresso. Tente novamente mais tarde.');
     }
 }
 
