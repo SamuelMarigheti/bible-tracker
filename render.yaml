@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: biblia-leitura-tracker
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_PATH
+        value: /opt/render/project/data/biblia.db
+    disk:
+      name: biblia-data
+      mountPath: /opt/render/project/data
+      sizeGB: 1

@@ -8,7 +8,7 @@
     "start": "node src/server/server.js",
     "dev": "node --watch src/server/server.js",
     "init-db": "node src/server/init-db.js",
-    "build:netlify": "echo 'No build required - static files'",
+    "build": "npm run init-db",
     "postinstall": "echo 'Dependencies installed'"
   },
   "keywords": [

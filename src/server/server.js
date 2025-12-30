@@ -13,7 +13,8 @@ const rootDir = path.join(__dirname, '../..');
 const publicDir = path.join(__dirname, '../public');
 
 const app = express();
-const db = new Database(path.join(rootDir, 'biblia.db'));
+const dbPath = process.env.DATABASE_PATH || path.join(rootDir, 'biblia.db');
+const db = new Database(dbPath);
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 

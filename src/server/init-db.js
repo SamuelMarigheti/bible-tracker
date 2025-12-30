@@ -1,13 +1,23 @@
+import 'dotenv/config';
 import Database from 'better-sqlite3';
 import bcrypt from 'bcrypt';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const dbPath = path.join(__dirname, '../..', 'biblia.db');
+const dbPath = process.env.DATABASE_PATH || path.join(__dirname, '../..', 'biblia.db');
+
+// Criar diretório se não existir (para ambientes de produção)
+const dbDir = path.dirname(dbPath);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+  console.log(`📁 Diretório criado: ${dbDir}`);
+}
 
 const db = new Database(dbPath);
+console.log(`📊 Banco de dados: ${dbPath}`);
 
 // Criar tabelas
 db.exec(`
