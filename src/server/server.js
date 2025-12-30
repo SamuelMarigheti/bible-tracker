@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import Database from 'better-sqlite3';
 import bcrypt from 'bcrypt';
@@ -163,6 +164,38 @@ app.post('/api/usuarios/:id/senha', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+// Trocar própria senha (requer senha atual)
+app.post('/api/usuarios/minha-senha', requireAuth, (req, res) => {
+  const { senhaAtual, novaSenha } = req.body;
+
+  if (!senhaAtual || !novaSenha) {
+    return res.status(400).json({ error: 'Senha atual e nova senha são obrigatórias' });
+  }
+
+  if (novaSenha.length < 6) {
+    return res.status(400).json({ error: 'A nova senha deve ter pelo menos 6 caracteres' });
+  }
+
+  // Buscar usuário atual
+  const usuario = db.prepare('SELECT * FROM usuarios WHERE id = ?').get(req.session.userId);
+
+  if (!usuario) {
+    return res.status(404).json({ error: 'Usuário não encontrado' });
+  }
+
+  // Verificar senha atual
+  if (!bcrypt.compareSync(senhaAtual, usuario.senha_hash)) {
+    return res.status(401).json({ error: 'Senha atual incorreta' });
+  }
+
+  // Atualizar senha
+  const senhaHash = bcrypt.hashSync(novaSenha, 10);
+  db.prepare('UPDATE usuarios SET senha_hash = ? WHERE id = ?')
+    .run(senhaHash, req.session.userId);
+
+  res.json({ success: true });
+});
+
 // Deletar usuário
 app.delete('/api/usuarios/:id', requireAdmin, (req, res) => {
   const userId = parseInt(req.params.id);
@@ -238,6 +271,22 @@ app.get('/api/progresso/usuario/:id', requireAdmin, (req, res) => {
   const usuario = db.prepare('SELECT nome, username FROM usuarios WHERE id = ?').get(userId);
 
   res.json({ usuario, progresso });
+});
+
+// Admin pode editar progresso de um usuário
+app.post('/api/admin/progresso/:userId', requireAdmin, (req, res) => {
+  const userId = parseInt(req.params.userId);
+  const { dia, concluido } = req.body;
+
+  const stmt = db.prepare(`
+    INSERT INTO progresso (usuario_id, dia, concluido, data_conclusao)
+    VALUES (?, ?, ?, datetime('now'))
+    ON CONFLICT(usuario_id, dia)
+    DO UPDATE SET concluido = ?, data_conclusao = datetime('now')
+  `);
+
+  stmt.run(userId, dia, concluido ? 1 : 0, concluido ? 1 : 0);
+  res.json({ success: true });
 });
 
 // ==================== ROTAS DE CONQUISTAS ====================

@@ -143,7 +143,7 @@ function getNomeCompleto(abreviacao) {
 // Variável global para manter contexto do último livro
 let ultimoLivro = '';
 
-// Função para formatar referência com tooltip
+// Função para formatar referência com tooltip e negrito em capítulos
 function formatarReferencia(ref) {
     // Remover espaços extras
     ref = ref.trim();
@@ -152,10 +152,11 @@ function formatarReferencia(ref) {
     if (/^\d/.test(ref)) {
         if (ultimoLivro) {
             const nomeCompleto = getNomeCompleto(ultimoLivro);
-            return `<span class="livro-ref" data-tooltip="${nomeCompleto}" title="${nomeCompleto}">${ultimoLivro}</span> ${ref}`;
+            const numFormatado = formatarNumeros(ref);
+            return `<span class="livro-ref" data-tooltip="${nomeCompleto}" title="${nomeCompleto}">${ultimoLivro}</span> ${numFormatado}`;
         }
-        // Se não tiver livro anterior, retorna apenas os números
-        return ref;
+        // Se não tiver livro anterior, retorna apenas os números formatados
+        return formatarNumeros(ref);
     }
 
     // Regex mais robusta para capturar livro + capítulo/versículo
@@ -170,17 +171,38 @@ function formatarReferencia(ref) {
         // Atualizar último livro para referências futuras
         ultimoLivro = livro;
 
+        // Formatar números (negrito em capítulos)
+        const capituloFormatado = formatarNumeros(capitulo);
+
         // Se o livro foi encontrado no dicionário, adiciona tooltip
         if (nomeCompleto !== livro) {
-            return `<span class="livro-ref" data-tooltip="${nomeCompleto}" title="${nomeCompleto}">${livro}</span> ${capitulo}`;
+            return `<span class="livro-ref" data-tooltip="${nomeCompleto}" title="${nomeCompleto}">${livro}</span> ${capituloFormatado}`;
         }
 
         // Se não encontrou, mas tem formato de livro, ainda marca como livro
-        return `<span class="livro-ref" title="${livro}">${livro}</span> ${capitulo}`;
+        return `<span class="livro-ref" title="${livro}">${livro}</span> ${capituloFormatado}`;
     }
 
     // Se não conseguiu fazer match, retorna a referência original
     return ref;
+}
+
+// Função para formatar números - colocar capítulos em negrito
+function formatarNumeros(texto) {
+    // Padrões comuns:
+    // 1.1-5 -> <b>1</b>.1-5
+    // 1.1-2.5 -> <b>1</b>.1-<b>2</b>.5
+    // 1-5 -> <b>1-5</b> (só capítulos)
+
+    // Substituir padrão: número(s) seguido de ponto (capítulo.versículo)
+    texto = texto.replace(/(\d+)(\.\d+)/g, '<b>$1</b>$2');
+
+    // Para casos como "1-5" (apenas capítulos, sem versículos), colocar tudo em negrito
+    if (/^\d+(-\d+)?$/.test(texto)) {
+        texto = `<b>${texto}</b>`;
+    }
+
+    return texto;
 }
 
 // Função para resetar o contexto do último livro (usar ao trocar de dia)

@@ -287,6 +287,82 @@
                 font-size: 0.75rem;
             }
         }
+
+        /* Modal de Progresso - Grid de Dias */
+        .modal-content-wide {
+            max-width: 900px;
+            width: 95%;
+        }
+
+        .progresso-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+            gap: 8px;
+            margin-top: 1.5rem;
+            max-height: 60vh;
+            overflow-y: auto;
+            padding: 1rem;
+            background: var(--branco-suave);
+            border: 2px solid var(--marrom);
+            border-radius: 10px;
+        }
+
+        .dia-checkbox {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .dia-checkbox input[type="checkbox"] {
+            position: absolute;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+            height: 100%;
+        }
+
+        .dia-number {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--marrom);
+            border-radius: 6px;
+            background: white;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            user-select: none;
+        }
+
+        .dia-checkbox:hover .dia-number {
+            transform: scale(1.1);
+            box-shadow: 0 2px 8px var(--sombra);
+        }
+
+        .dia-number.concluido {
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
+            color: white;
+            border-color: #27ae60;
+        }
+
+        .dia-number.concluido::after {
+            content: '✓';
+            position: absolute;
+            font-size: 1.2rem;
+        }
+
+        .modal-header-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid var(--marrom);
+        }
     </style>
 </head>
 <body>
@@ -297,6 +373,9 @@
                 <p id="userInfo"></p>
             </div>
             <div class="header-actions">
+                <button onclick="openMinhaSenhaModal()" class="btn btn-secondary">
+                    <i class="fas fa-key"></i> Alterar Senha
+                </button>
                 <a href="/app" class="btn btn-secondary">
                     <i class="fas fa-book-open"></i> Minha Leitura
                 </a>
@@ -398,6 +477,50 @@
                 </div>
                 <div class="form-actions">
                     <button type="button" onclick="closeSenhaModal()" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Progresso do Usuário -->
+    <div id="progressoModal" class="modal">
+        <div class="modal-content modal-content-wide">
+            <div class="modal-header-info">
+                <h3><i class="fas fa-calendar-check"></i> Progresso de <span id="progressoUserName"></span></h3>
+                <button onclick="closeProgressoModal()" class="btn btn-secondary btn-small">
+                    <i class="fas fa-times"></i> Fechar
+                </button>
+            </div>
+            <input type="hidden" id="progressoUserId">
+            <p style="color: var(--marrom); margin-bottom: 1rem;">
+                <i class="fas fa-info-circle"></i> Clique em qualquer dia para marcar ou desmarcar como concluído
+            </p>
+            <div id="progressoDias" class="progresso-grid">
+                <!-- Preenchido via JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Alterar Minha Senha -->
+    <div id="minhaSenhaModal" class="modal">
+        <div class="modal-content">
+            <h3><i class="fas fa-key"></i> Alterar Minha Senha</h3>
+            <form id="minhaSenhaForm">
+                <div class="form-group">
+                    <label>Senha Atual</label>
+                    <input type="password" id="senhaAtual" required>
+                </div>
+                <div class="form-group">
+                    <label>Nova Senha</label>
+                    <input type="password" id="minhaNovaSenha" required minlength="6">
+                </div>
+                <div class="form-group">
+                    <label>Confirmar Nova Senha</label>
+                    <input type="password" id="confirmarSenha" required minlength="6">
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeMinhaSenhaModal()" class="btn btn-secondary">Cancelar</button>
                     <button type="submit" class="btn">Salvar</button>
                 </div>
             </form>
@@ -559,9 +682,104 @@
             }
         }
 
-        function viewUserProgress(userId) {
-            window.open(`/app?user=${userId}`, '_blank');
+        async function viewUserProgress(userId) {
+            // Carregar progresso detalhado
+            const response = await fetch(`/api/progresso/usuario/${userId}`);
+            const data = await response.json();
+
+            // Preencher modal
+            document.getElementById('progressoUserName').textContent = data.usuario.nome;
+            document.getElementById('progressoUserId').value = userId;
+
+            // Criar grid de dias
+            const container = document.getElementById('progressoDias');
+            container.innerHTML = '';
+
+            for (let dia = 1; dia <= 365; dia++) {
+                const diaData = data.progresso.find(p => p.dia === dia);
+                const concluido = diaData?.concluido === 1;
+
+                const checkbox = document.createElement('label');
+                checkbox.className = 'dia-checkbox';
+                checkbox.title = `Dia ${dia}`;
+                checkbox.innerHTML = `
+                    <input type="checkbox" ${concluido ? 'checked' : ''} onchange="toggleDiaProgresso(${userId}, ${dia}, this.checked)">
+                    <span class="dia-number ${concluido ? 'concluido' : ''}">${dia}</span>
+                `;
+                container.appendChild(checkbox);
+            }
+
+            // Mostrar modal
+            document.getElementById('progressoModal').classList.add('show');
         }
+
+        async function toggleDiaProgresso(userId, dia, concluido) {
+            const response = await fetch(`/api/admin/progresso/${userId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ dia, concluido })
+            });
+
+            if (!response.ok) {
+                alert('Erro ao atualizar progresso');
+            } else {
+                // Atualizar estilo visual
+                const checkbox = event.target;
+                const span = checkbox.nextElementSibling;
+                if (concluido) {
+                    span.classList.add('concluido');
+                } else {
+                    span.classList.remove('concluido');
+                }
+                // Recarregar tabela de progresso geral
+                loadProgresso();
+            }
+        }
+
+        function closeProgressoModal() {
+            document.getElementById('progressoModal').classList.remove('show');
+        }
+
+        function openMinhaSenhaModal() {
+            document.getElementById('minhaSenhaModal').classList.add('show');
+        }
+
+        function closeMinhaSenhaModal() {
+            document.getElementById('minhaSenhaModal').classList.remove('show');
+            document.getElementById('minhaSenhaForm').reset();
+        }
+
+        document.getElementById('minhaSenhaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const senhaAtual = document.getElementById('senhaAtual').value;
+            const novaSenha = document.getElementById('minhaNovaSenha').value;
+            const confirmarSenha = document.getElementById('confirmarSenha').value;
+
+            if (novaSenha !== confirmarSenha) {
+                alert('As senhas não coincidem!');
+                return;
+            }
+
+            if (novaSenha.length < 6) {
+                alert('A nova senha deve ter pelo menos 6 caracteres!');
+                return;
+            }
+
+            const response = await fetch('/api/usuarios/minha-senha', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senhaAtual, novaSenha })
+            });
+
+            if (response.ok) {
+                alert('Senha alterada com sucesso!');
+                closeMinhaSenhaModal();
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Erro ao alterar senha');
+            }
+        });
 
         async function logout() {
             await fetch('/api/logout', { method: 'POST' });

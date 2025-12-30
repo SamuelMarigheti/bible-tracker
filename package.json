@@ -11,15 +11,20 @@
     "build:netlify": "echo 'No build required - static files'",
     "postinstall": "echo 'Dependencies installed'"
   },
-  "keywords": ["biblia", "leitura", "pwa"],
+  "keywords": [
+    "biblia",
+    "leitura",
+    "pwa"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.18.2",
-    "better-sqlite3": "^9.2.2",
     "bcrypt": "^5.1.1",
+    "better-sqlite3": "^9.2.2",
     "cookie-parser": "^1.4.6",
-    "express-session": "^1.17.3",
-    "cors": "^2.8.5"
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3"
   }
 }

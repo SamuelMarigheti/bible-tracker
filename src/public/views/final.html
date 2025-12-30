@@ -87,14 +87,22 @@
                 <i class="fas fa-bars"></i>
             </button>
             <div class="header-content">
-                <h1><i class="fas fa-book-bible"></i> Plano de Leitura Bíblica</h1>
+                <h1><i class="fas fa-book"></i> Plano de Leitura Bíblica</h1>
                 <p class="data-atual" id="dataAtual">Carregando...</p>
             </div>
             <div class="header-user">
-                <span class="user-name" id="userName">Usuário</span>
-                <button class="btn-user-menu" id="btnUserMenu">
-                    <i class="fas fa-user-circle"></i>
-                </button>
+                <div style="text-align: right;">
+                    <div style="display: flex; align-items: center; gap: 0.8rem; justify-content: flex-end;">
+                        <div id="btnUserMenu" style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;" title="Clique para ver opções">
+                            <span class="user-name" id="userName">Usuário</span>
+                            <i class="fas fa-user-circle" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <button id="btnSairQuick" onclick="logout()" style="padding: 0.4rem 0.8rem; background: var(--marrom); color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 0.75rem; display: flex; align-items: center; gap: 0.3rem; white-space: nowrap;">
+                            <i class="fas fa-sign-out-alt"></i> Sair
+                        </button>
+                    </div>
+                    <small style="opacity: 0.7; font-size: 0.75rem;">Clique no ícone para alterar a senha</small>
+                </div>
                 <div class="user-dropdown" id="userDropdown">
                     <button class="dropdown-item" id="btnTrocarSenha">
                         <i class="fas fa-key"></i> Trocar Senha

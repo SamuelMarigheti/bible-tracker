@@ -14,19 +14,17 @@ async function checkAuth() {
 
         currentUser = data.usuario;
 
-        // Mostrar nome do usuário no header
-        const userInfo = document.createElement('div');
-        userInfo.style.cssText = 'position: fixed; top: 10px; right: 10px; background: var(--pergaminho); padding: 0.8rem 1.2rem; border: 2px solid var(--marrom); border-radius: 10px; box-shadow: 0 4px 10px var(--sombra); z-index: 1000; display: flex; gap: 1rem; align-items: center;';
-        userInfo.innerHTML = `
-            <span style="font-weight: 600; color: var(--marrom);">
-                <i class="fas fa-user"></i> ${currentUser.nome}
-            </span>
-            ${currentUser.isAdmin ? `<a href="/admin" style="color: var(--dourado); text-decoration: none;"><i class="fas fa-cog"></i> Admin</a>` : ''}
-            <button onclick="logout()" style="background: var(--marrom); color: white; border: none; padding: 0.5rem 1rem; border-radius: 5px; cursor: pointer;">
-                <i class="fas fa-sign-out-alt"></i> Sair
-            </button>
-        `;
-        document.body.appendChild(userInfo);
+        // Atualizar nome do usuário no header
+        const userName = document.getElementById('userName');
+        if (userName) {
+            userName.textContent = currentUser.nome;
+        }
+
+        // Mostrar botão admin se for admin
+        const btnAdmin = document.getElementById('btnAdmin');
+        if (btnAdmin && currentUser.isAdmin) {
+            btnAdmin.style.display = 'block';
+        }
 
         return true;
     } catch (err) {
