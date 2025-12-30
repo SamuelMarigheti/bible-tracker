@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="description" content="Plano de Leitura Bíblica completo para 365 dias">
+    <meta name="theme-color" content="#8B4513">
+    <title>Plano de Leitura Bíblica - 365 Dias</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <!-- PWA -->
+    <link rel="manifest" href="/assets/icons/manifest.json">
+    <link rel="apple-touch-icon" href="/assets/icons/icon-192.png">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+    <!-- Menu Lateral (Sidebar) -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-chart-line"></i> Estatísticas</h2>
+            <button class="btn-close-sidebar" id="closeSidebar">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Dia Atual</div>
+                <div class="stat-value" id="diaAtualStat">1</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Total de Dias</div>
+                <div class="stat-value">365</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Completos</div>
+                <div class="stat-value" id="completosStat">0</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Restantes</div>
+                <div class="stat-value" id="restantesStat">365</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-label">Sequência</div>
+                <div class="stat-value" id="sequenciaStat">0</div>
+            </div>
+        </div>
+
+        <!-- Progresso Anual -->
+        <div class="progresso-anual">
+            <h3><i class="fas fa-calendar-check"></i> Progresso Anual</h3>
+            <div class="barra-progresso-container">
+                <div class="barra-progresso">
+                    <div class="barra-fill" id="barraAnual" style="width: 0%"></div>
+                </div>
+                <span class="percentual" id="percentualAnual">0%</span>
+            </div>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="sidebar-actions">
+            <button class="btn-action" id="btnExportar">
+                <i class="fas fa-file-pdf"></i> Exportar PDF
+            </button>
+            <button class="btn-action" id="btnConquistas">
+                <i class="fas fa-trophy"></i> Conquistas
+            </button>
+        </div>
+    </aside>
+
+    <!-- Conteúdo Principal -->
+    <main class="main-content">
+        <!-- Header -->
+        <header class="header">
+            <button class="btn-menu" id="openSidebar">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="header-content">
+                <h1><i class="fas fa-book-bible"></i> Plano de Leitura Bíblica</h1>
+                <p class="data-atual" id="dataAtual">Carregando...</p>
+            </div>
+        </header>
+
+        <!-- Card do Dia Atual -->
+        <section class="card-dia" id="cardDia">
+            <div class="dia-header">
+                <button class="btn-nav" id="btnAnterior">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <h2>Dia <span id="numeroDia">1</span> de 365</h2>
+                <button class="btn-nav" id="btnProximo">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Progresso do Dia -->
+            <div class="progresso-dia">
+                <div class="barra-progresso-container">
+                    <div class="barra-progresso">
+                        <div class="barra-fill" id="barraDia" style="width: 0%"></div>
+                    </div>
+                    <span class="percentual" id="percentualDia">0%</span>
+                </div>
+            </div>
+
+            <!-- Referências Bíblicas -->
+            <div class="referencias-container">
+                <h3>Leituras do Dia</h3>
+                <div class="referencias" id="referencias">
+                    <!-- Preenchido via JavaScript -->
+                </div>
+            </div>
+
+            <!-- Checkbox Concluir -->
+            <div class="concluir-container">
+                <label class="checkbox-label">
+                    <input type="checkbox" id="diaCompleto">
+                    <span class="checkbox-custom"></span>
+                    <span>Marcar dia como completo</span>
+                </label>
+            </div>
+        </section>
+
+        <!-- Calendário Heatmap -->
+        <section class="calendario-section">
+            <h2><i class="fas fa-calendar"></i> Calendário do Ano</h2>
+            <div class="heatmap" id="heatmap">
+                <!-- Preenchido via JavaScript -->
+            </div>
+            <div class="heatmap-legend">
+                <span>Menos</span>
+                <div class="legend-item" style="background: #eee"></div>
+                <div class="legend-item" style="background: #c6e48b"></div>
+                <div class="legend-item" style="background: #7bc96f"></div>
+                <div class="legend-item" style="background: #239a3b"></div>
+                <div class="legend-item" style="background: #196127"></div>
+                <span>Mais</span>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Conquistas -->
+    <div class="modal" id="modalConquistas">
+        <div class="modal-content">
+            <button class="modal-close" id="closeConquistas">
+                <i class="fas fa-times"></i>
+            </button>
+            <h2><i class="fas fa-trophy"></i> Conquistas</h2>
+            <div id="conquistasContainer"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/plano-dados.js"></script>
+    <script src="/js/livros-biblia.js"></script>
+    <script src="/js/app-main.js"></script>
+    <script src="/js/api-client.js"></script>
+    <script src="/js/pwa-installer.js"></script>
+</body>
+</html>

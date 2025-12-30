@@ -1,0 +1,41 @@
+# Dependências
+node_modules/
+
+# Banco de dados
+*.db
+*.db-journal
+
+# Logs
+*.log
+npm-debug.log*
+
+# Variáveis de ambiente
+.env
+.env.local
+.env.production
+
+# Sistema Operacional
+.DS_Store
+Thumbs.db
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Backups
+.backups/
+*.backup
+
+# Temporários
+*.tmp
+/tmp/
+
+# Build
+dist/
+build/
+
+# Claude Code
+.claude/

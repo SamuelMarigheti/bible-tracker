@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#8B4513">
+    <title>Painel Admin - Plano de Leitura Bíblica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --pergaminho: #F5F5DC;
+            --marrom: #8B4513;
+            --dourado: #DAA520;
+            --sombra: rgba(139, 69, 19, 0.3);
+            --branco-suave: #FDFBF7;
+            --marrom-escuro: #5D2E0F;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'PT Serif', serif;
+            background: linear-gradient(135deg, #E8D5B7 0%, #C9B393 100%);
+            min-height: 100vh;
+            padding: 1rem;
+            color: var(--marrom-escuro);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: var(--pergaminho);
+            border: 3px solid var(--marrom);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 20px var(--sombra);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            color: var(--marrom);
+            font-size: 1.8rem;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            background: linear-gradient(135deg, var(--marrom) 0%, var(--marrom-escuro) 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'PT Serif', serif;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px var(--sombra);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, var(--dourado) 0%, #B8860B 100%);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+        }
+
+        .btn-small {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: var(--pergaminho);
+            border: 2px solid var(--marrom);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Cinzel', serif;
+        }
+
+        .tab.active {
+            background: var(--marrom);
+            color: white;
+        }
+
+        .card {
+            background: var(--pergaminho);
+            border: 3px solid var(--marrom);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 8px 20px var(--sombra);
+        }
+
+        .card h2 {
+            font-family: 'Cinzel', serif;
+            color: var(--marrom);
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--marrom);
+        }
+
+        th {
+            background: var(--marrom);
+            color: white;
+            font-family: 'Cinzel', serif;
+        }
+
+        tr:hover {
+            background: rgba(139, 69, 19, 0.05);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--pergaminho);
+            border: 3px solid var(--marrom);
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal h3 {
+            font-family: 'Cinzel', serif;
+            color: var(--marrom);
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--marrom);
+            font-weight: 600;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid var(--marrom);
+            border-radius: 8px;
+            font-family: 'PT Serif', serif;
+            font-size: 1rem;
+            background: var(--branco-suave);
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .badge-warning {
+            background: #f39c12;
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--pergaminho);
+            border: 2px solid var(--marrom);
+            border-radius: 10px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-family: 'Cinzel', serif;
+            color: var(--marrom);
+            font-weight: bold;
+        }
+
+        .stat-label {
+            color: var(--marrom);
+            opacity: 0.8;
+            margin-top: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            table {
+                font-size: 0.9rem;
+            }
+
+            th, td {
+                padding: 0.7rem 0.5rem;
+            }
+
+            .btn-small {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div>
+                <h1><i class="fas fa-user-shield"></i> Painel Administrativo</h1>
+                <p id="userInfo"></p>
+            </div>
+            <div class="header-actions">
+                <a href="/app" class="btn btn-secondary">
+                    <i class="fas fa-book-open"></i> Minha Leitura
+                </a>
+                <button onclick="logout()" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Sair
+                </button>
+            </div>
+        </header>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('usuarios')">
+                <i class="fas fa-users"></i> Usuários
+            </div>
+            <div class="tab" onclick="switchTab('progresso')">
+                <i class="fas fa-chart-line"></i> Progresso Geral
+            </div>
+        </div>
+
+        <div id="tab-usuarios" class="tab-content active">
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                    <h2>Gerenciar Usuários</h2>
+                    <button onclick="openCreateModal()" class="btn">
+                        <i class="fas fa-user-plus"></i> Novo Usuário
+                    </button>
+                </div>
+
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nome</th>
+                                <th>Usuário</th>
+                                <th>Criado em</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usuariosTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="tab-progresso" class="tab-content">
+            <div class="card">
+                <h2>Acompanhamento de Progresso</h2>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Usuário</th>
+                                <th>Dias Concluídos</th>
+                                <th>Progresso</th>
+                                <th>Última Leitura</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="progressoTable"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Criar Usuário -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <h3><i class="fas fa-user-plus"></i> Novo Usuário</h3>
+            <form id="createForm">
+                <div class="form-group">
+                    <label>Nome Completo</label>
+                    <input type="text" id="createNome" required>
+                </div>
+                <div class="form-group">
+                    <label>Nome de Usuário</label>
+                    <input type="text" id="createUsername" required>
+                </div>
+                <div class="form-group">
+                    <label>Senha</label>
+                    <input type="password" id="createSenha" required minlength="6">
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeCreateModal()" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn">Criar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Trocar Senha -->
+    <div id="senhaModal" class="modal">
+        <div class="modal-content">
+            <h3><i class="fas fa-key"></i> Trocar Senha</h3>
+            <form id="senhaForm">
+                <input type="hidden" id="senhaUserId">
+                <div class="form-group">
+                    <label>Nova Senha</label>
+                    <input type="password" id="novaSenha" required minlength="6">
+                </div>
+                <div class="form-actions">
+                    <button type="button" onclick="closeSenhaModal()" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = null;
+
+        // Verificar autenticação
+        fetch('/api/session')
+            .then(r => r.json())
+            .then(data => {
+                if (!data.autenticado || !data.usuario.isAdmin) {
+                    window.location.href = '/';
+                } else {
+                    currentUser = data.usuario;
+                    document.getElementById('userInfo').textContent = `Bem-vindo, ${data.usuario.nome}`;
+                    loadUsuarios();
+                    loadProgresso();
+                }
+            });
+
+        async function loadUsuarios() {
+            const response = await fetch('/api/usuarios');
+            const usuarios = await response.json();
+
+            const tbody = document.getElementById('usuariosTable');
+            tbody.innerHTML = usuarios.filter(u => u.is_admin === 0).map(u => `
+                <tr>
+                    <td>${u.nome}</td>
+                    <td>${u.username}</td>
+                    <td>${new Date(u.criado_em).toLocaleDateString('pt-BR')}</td>
+                    <td>
+                        <button onclick="openSenhaModal(${u.id})" class="btn btn-secondary btn-small">
+                            <i class="fas fa-key"></i> Senha
+                        </button>
+                        <button onclick="deleteUser(${u.id}, '${u.nome}')" class="btn btn-danger btn-small">
+                            <i class="fas fa-trash"></i> Excluir
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function loadProgresso() {
+            const response = await fetch('/api/progresso/todos');
+            const progressos = await response.json();
+
+            const tbody = document.getElementById('progressoTable');
+            tbody.innerHTML = progressos.map(p => {
+                const percent = Math.round((p.dias_concluidos / 365) * 100);
+                return `
+                    <tr>
+                        <td>${p.nome}</td>
+                        <td>${p.dias_concluidos}/365</td>
+                        <td>
+                            <div style="background: #ddd; border-radius: 10px; height: 20px; overflow: hidden;">
+                                <div style="background: var(--marrom); width: ${percent}%; height: 100%; border-radius: 10px;"></div>
+                            </div>
+                            <small>${percent}%</small>
+                        </td>
+                        <td>${p.ultima_leitura ? new Date(p.ultima_leitura).toLocaleDateString('pt-BR') : 'Nunca'}</td>
+                        <td>
+                            <button onclick="viewUserProgress(${p.id})" class="btn btn-secondary btn-small">
+                                <i class="fas fa-eye"></i> Ver Detalhes
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            event.target.closest('.tab').classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+
+        function openCreateModal() {
+            document.getElementById('createModal').classList.add('show');
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').classList.remove('show');
+            document.getElementById('createForm').reset();
+        }
+
+        function openSenhaModal(userId) {
+            document.getElementById('senhaUserId').value = userId;
+            document.getElementById('senhaModal').classList.add('show');
+        }
+
+        function closeSenhaModal() {
+            document.getElementById('senhaModal').classList.remove('show');
+            document.getElementById('senhaForm').reset();
+        }
+
+        document.getElementById('createForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                nome: document.getElementById('createNome').value,
+                username: document.getElementById('createUsername').value,
+                senha: document.getElementById('createSenha').value
+            };
+
+            const response = await fetch('/api/usuarios', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                alert('Usuário criado com sucesso!');
+                closeCreateModal();
+                loadUsuarios();
+            } else {
+                const error = await response.json();
+                alert(error.error || 'Erro ao criar usuário');
+            }
+        });
+
+        document.getElementById('senhaForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const userId = document.getElementById('senhaUserId').value;
+            const novaSenha = document.getElementById('novaSenha').value;
+
+            const response = await fetch(`/api/usuarios/${userId}/senha`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ novaSenha })
+            });
+
+            if (response.ok) {
+                alert('Senha alterada com sucesso!');
+                closeSenhaModal();
+            } else {
+                alert('Erro ao alterar senha');
+            }
+        });
+
+        async function deleteUser(id, nome) {
+            if (!confirm(`Tem certeza que deseja excluir o usuário ${nome}? Isso também apagará todo o seu progresso.`)) {
+                return;
+            }
+
+            const response = await fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
+
+            if (response.ok) {
+                alert('Usuário excluído com sucesso!');
+                loadUsuarios();
+                loadProgresso();
+            } else {
+                alert('Erro ao excluir usuário');
+            }
+        }
+
+        function viewUserProgress(userId) {
+            window.open(`/app?user=${userId}`, '_blank');
+        }
+
+        async function logout() {
+            await fetch('/api/logout', { method: 'POST' });
+            window.location.href = '/';
+        }
+    </script>
+</body>
+</html>

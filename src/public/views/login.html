@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#8B4513">
+    <title>Login - Plano de Leitura Bíblica</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --pergaminho: #F5F5DC;
+            --marrom: #8B4513;
+            --dourado: #DAA520;
+            --sombra: rgba(139, 69, 19, 0.3);
+            --branco-suave: #FDFBF7;
+            --marrom-escuro: #5D2E0F;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'PT Serif', serif;
+            background: linear-gradient(135deg, #E8D5B7 0%, #C9B393 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            color: var(--marrom-escuro);
+        }
+
+        .login-container {
+            background: var(--pergaminho);
+            border: 3px solid var(--marrom);
+            border-radius: 15px;
+            padding: 2.5rem;
+            max-width: 400px;
+            width: 100%;
+            box-shadow: 0 8px 20px var(--sombra);
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .logo i {
+            font-size: 4rem;
+            color: var(--marrom);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            font-family: 'Cinzel', serif;
+            color: var(--marrom);
+            text-align: center;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: var(--marrom);
+            opacity: 0.8;
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--marrom);
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid var(--marrom);
+            border-radius: 8px;
+            font-family: 'PT Serif', serif;
+            font-size: 1rem;
+            background: var(--branco-suave);
+            transition: all 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--dourado);
+            box-shadow: 0 0 0 3px rgba(218, 165, 32, 0.2);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--marrom) 0%, var(--marrom-escuro) 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Cinzel', serif;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px var(--sombra);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px var(--sombra);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error {
+            background: #ff6b6b;
+            color: white;
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+            display: none;
+            animation: shake 0.5s;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 2rem;
+            color: var(--marrom);
+            opacity: 0.7;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <i class="fas fa-book-bible"></i>
+        </div>
+        <h1>Plano de Leitura Bíblica</h1>
+        <p class="subtitle">365 Dias de Transformação</p>
+
+        <div class="error" id="error"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">
+                    <i class="fas fa-user"></i> Usuário
+                </label>
+                <input type="text" id="username" name="username" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="senha">
+                    <i class="fas fa-lock"></i> Senha
+                </label>
+                <input type="password" id="senha" name="senha" required autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn" id="loginBtn">
+                <i class="fas fa-sign-in-alt"></i> Entrar
+            </button>
+        </form>
+
+        <div class="footer">
+            Desenvolvido com <i class="fas fa-heart" style="color: #c0392b;"></i>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const errorDiv = document.getElementById('error');
+        const loginBtn = document.getElementById('loginBtn');
+
+        // Verificar se já está autenticado
+        fetch('/api/session')
+            .then(r => r.json())
+            .then(data => {
+                if (data.autenticado) {
+                    if (data.usuario.isAdmin) {
+                        window.location.href = '/admin';
+                    } else {
+                        window.location.href = '/app';
+                    }
+                }
+            });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            errorDiv.classList.remove('show');
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+
+            const formData = {
+                username: document.getElementById('username').value,
+                senha: document.getElementById('senha').value
+            };
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    if (data.usuario.isAdmin) {
+                        window.location.href = '/admin';
+                    } else {
+                        window.location.href = '/app';
+                    }
+                } else {
+                    errorDiv.textContent = data.error || 'Erro ao fazer login';
+                    errorDiv.classList.add('show');
+                    loginBtn.disabled = false;
+                    loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Erro de conexão com o servidor';
+                errorDiv.classList.add('show');
+                loginBtn.disabled = false;
+                loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Entrar';
+            }
+        });
+    </script>
+</body>
+</html>
