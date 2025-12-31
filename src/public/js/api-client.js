@@ -22,16 +22,25 @@ function resetarTimeouts() {
     if (timeoutAviso) clearTimeout(timeoutAviso);
 
     // Aviso 2 minutos antes
-    timeoutAviso = setTimeout(() => {
-        if (confirm('⚠️ Sua sessão vai expirar em 2 minutos por inatividade.\n\nClique OK para continuar conectado.')) {
+    timeoutAviso = setTimeout(async () => {
+        const continuar = await customConfirm(
+            'Sua sessão vai expirar em 2 minutos por inatividade.\n\nDeseja continuar conectado?',
+            {
+                title: 'Sessão Expirando',
+                type: 'warning',
+                confirmText: 'Continuar conectado',
+                cancelText: 'Sair'
+            }
+        );
+        if (continuar) {
             atualizarAtividade();
         }
     }, TEMPO_INATIVIDADE - TEMPO_AVISO);
 
     // Logout automático após 30 minutos
     timeoutInatividade = setTimeout(() => {
-        alert('🔒 Sua sessão expirou por inatividade.\n\nVocê será redirecionado para a tela de login.');
-        logout(true); // true = não perguntar confirmação
+        showWarning('Sua sessão expirou por inatividade.\n\nVocê será redirecionado para a tela de login.');
+        setTimeout(() => logout(true), 2000); // true = não perguntar confirmação
     }, TEMPO_INATIVIDADE);
 }
 
@@ -208,7 +217,19 @@ window.carregarConquistas = async function() {
 
 // Função de logout
 window.logout = async function(forcarSaida = false) {
-    if (forcarSaida || confirm('Tem certeza que deseja sair?')) {
+    if (forcarSaida) {
+        await fetch('/api/logout', { method: 'POST' });
+        window.location.href = '/';
+        return;
+    }
+
+    const confirmacao = await customConfirm('Tem certeza que deseja sair?', {
+        title: 'Sair',
+        confirmText: 'Sim, sair',
+        cancelText: 'Cancelar'
+    });
+
+    if (confirmacao) {
         await fetch('/api/logout', { method: 'POST' });
         window.location.href = '/';
     }
@@ -234,14 +255,14 @@ function mostrarModalTrocarSenhaObrigatorio() {
 
         // Validar confirmação
         if (senhaNova !== senhaConfirma) {
-            alert('❌ As senhas não coincidem!');
+            showError('As senhas não coincidem!');
             return;
         }
 
         // Validar senha forte
         const validacao = validarSenhaForte(senhaNova);
         if (!validacao.valida) {
-            alert('❌ ' + validacao.erro);
+            showError(validacao.erro);
             return;
         }
 
@@ -255,18 +276,93 @@ function mostrarModalTrocarSenhaObrigatorio() {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                alert('✅ Senha alterada com sucesso!\n\nVocê já pode usar sua nova senha.');
+                showSuccess('Senha alterada com sucesso!\n\nVocê já pode usar sua nova senha.');
                 modal.classList.remove('show');
                 form.reset();
                 deveTrocarSenha = false;
             } else {
-                alert('❌ ' + (data.error || 'Erro ao alterar senha'));
+                showError(data.error || 'Erro ao alterar senha');
             }
         } catch (error) {
             console.error('Erro ao alterar senha:', error);
-            alert('❌ Erro ao alterar senha. Tente novamente.');
+            showError('Erro ao alterar senha. Tente novamente.');
         }
     };
+}
+
+// ==================== SISTEMA DE AUTO-ATUALIZAÇÃO ====================
+let lastProgressUpdate = Date.now();
+let autoUpdateInterval = null;
+const AUTO_UPDATE_INTERVAL = 60 * 1000; // Verificar a cada 60 segundos
+
+async function verificarAtualizacoes() {
+    if (!currentUser || deveTrocarSenha) return;
+
+    try {
+        // Buscar progresso atualizado
+        const response = await fetch('/api/progresso');
+        if (!response.ok) return;
+
+        const dados = await response.json();
+
+        if (dados && dados.length > 0) {
+            const novoProgresso = {};
+            dados.forEach(item => {
+                novoProgresso[item.dia] = item.concluido === 1;
+            });
+
+            // Verificar se houve alterações
+            const progressoAtualStr = JSON.stringify(progressoData.progresso);
+            const novoProgressoStr = JSON.stringify(novoProgresso);
+
+            if (progressoAtualStr !== novoProgressoStr) {
+                console.log('📊 Progresso atualizado detectado. Atualizando interface...');
+
+                // Atualizar dados
+                progressoData.progresso = novoProgresso;
+                progressoData.stats = {
+                    totalDias: 365,
+                    diasLidos: Object.values(novoProgresso).filter(v => v).length,
+                    streak: 0
+                };
+
+                // Atualizar interface
+                if (typeof atualizarTodasEstatisticas === 'function') {
+                    atualizarTodasEstatisticas();
+                }
+                if (typeof criarCalendarioHeatmap === 'function') {
+                    criarCalendarioHeatmap();
+                }
+                if (typeof atualizarProgressoDia === 'function') {
+                    atualizarProgressoDia();
+                }
+
+                lastProgressUpdate = Date.now();
+            }
+        }
+    } catch (error) {
+        console.error('Erro ao verificar atualizações:', error);
+    }
+}
+
+function iniciarAutoAtualizacao() {
+    // Limpar intervalo anterior se existir
+    if (autoUpdateInterval) {
+        clearInterval(autoUpdateInterval);
+    }
+
+    // Iniciar polling
+    autoUpdateInterval = setInterval(verificarAtualizacoes, AUTO_UPDATE_INTERVAL);
+
+    console.log('🔄 Auto-atualização ativada (verificando a cada 60 segundos)');
+}
+
+function pararAutoAtualizacao() {
+    if (autoUpdateInterval) {
+        clearInterval(autoUpdateInterval);
+        autoUpdateInterval = null;
+        console.log('⏸️ Auto-atualização pausada');
+    }
 }
 
 // Inicializar quando a página carregar
@@ -280,9 +376,28 @@ function mostrarModalTrocarSenhaObrigatorio() {
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', async () => {
                 await carregarProgresso();
+                // Iniciar auto-atualização após carregar progresso
+                if (!deveTrocarSenha) {
+                    iniciarAutoAtualizacao();
+                }
             });
         } else {
             await carregarProgresso();
+            // Iniciar auto-atualização após carregar progresso
+            if (!deveTrocarSenha) {
+                iniciarAutoAtualizacao();
+            }
         }
     }
 })();
+
+// Pausar auto-atualização quando a aba não estiver visível (economia de recursos)
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        pararAutoAtualizacao();
+    } else if (currentUser && !deveTrocarSenha) {
+        iniciarAutoAtualizacao();
+        // Verificar imediatamente ao voltar para a aba
+        verificarAtualizacoes();
+    }
+});

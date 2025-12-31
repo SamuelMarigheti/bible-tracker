@@ -532,6 +532,7 @@
         </div>
     </div>
 
+    <script src="/js/notifications.js"></script>
     <script>
         let currentUser = null;
 
@@ -643,12 +644,12 @@
             const result = await response.json();
 
             if (response.ok) {
-                alert(`✅ Usuário criado com sucesso!\n\n📌 Senha Padrão: ${result.senhaPadrao}\n\n⚠️ O usuário será obrigado a alterar a senha no primeiro login.\n\nInforme ao usuário suas credenciais.`);
+                showSuccess(`Usuário criado com sucesso!\n\nSenha Padrão: ${result.senhaPadrao}\n\nO usuário será obrigado a alterar a senha no primeiro login.\n\nInforme ao usuário suas credenciais.`);
                 closeCreateModal();
                 loadUsuarios();
             } else {
                 const error = await response.json();
-                alert(error.error || 'Erro ao criar usuário');
+                showError(error.error || 'Erro ao criar usuário');
             }
         });
 
@@ -665,26 +666,35 @@
             });
 
             if (response.ok) {
-                alert('Senha alterada com sucesso!');
+                showSuccess('Senha alterada com sucesso!');
                 closeSenhaModal();
             } else {
-                alert('Erro ao alterar senha');
+                showError('Erro ao alterar senha');
             }
         });
 
         async function deleteUser(id, nome) {
-            if (!confirm(`Tem certeza que deseja excluir o usuário ${nome}? Isso também apagará todo o seu progresso.`)) {
-                return;
-            }
+            const confirmacao = await customConfirm(
+                `Tem certeza que deseja excluir o usuário ${nome}?\n\nIsso também apagará todo o seu progresso.`,
+                {
+                    title: 'Excluir Usuário',
+                    type: 'danger',
+                    confirmText: 'Sim, excluir',
+                    cancelText: 'Cancelar',
+                    danger: true
+                }
+            );
+
+            if (!confirmacao) return;
 
             const response = await fetch(`/api/usuarios/${id}`, { method: 'DELETE' });
 
             if (response.ok) {
-                alert('Usuário excluído com sucesso!');
+                showSuccess('Usuário excluído com sucesso!');
                 loadUsuarios();
                 loadProgresso();
             } else {
-                alert('Erro ao excluir usuário');
+                showError('Erro ao excluir usuário');
             }
         }
 
@@ -727,7 +737,7 @@
             });
 
             if (!response.ok) {
-                alert('Erro ao atualizar progresso');
+                showError('Erro ao atualizar progresso');
             } else {
                 // Atualizar estilo visual
                 const checkbox = event.target;
@@ -763,12 +773,12 @@
             const confirmarSenha = document.getElementById('confirmarSenha').value;
 
             if (novaSenha !== confirmarSenha) {
-                alert('As senhas não coincidem!');
+                showError('As senhas não coincidem!');
                 return;
             }
 
             if (novaSenha.length < 6) {
-                alert('A nova senha deve ter pelo menos 6 caracteres!');
+                showError('A nova senha deve ter pelo menos 6 caracteres!');
                 return;
             }
 
@@ -779,11 +789,11 @@
             });
 
             if (response.ok) {
-                alert('Senha alterada com sucesso!');
+                showSuccess('Senha alterada com sucesso!');
                 closeMinhaSenhaModal();
             } else {
                 const error = await response.json();
-                alert(error.error || 'Erro ao alterar senha');
+                showError(error.error || 'Erro ao alterar senha');
             }
         });
 

@@ -15,6 +15,18 @@ function getCachedElement(id) {
     return domCache[id];
 }
 
+// Throttle para otimizar eventos frequentes
+function throttle(func, delay) {
+    let lastCall = 0;
+    return function(...args) {
+        const now = Date.now();
+        if (now - lastCall >= delay) {
+            lastCall = now;
+            return func.apply(this, args);
+        }
+    };
+}
+
 // Debounce para salvar progresso (evitar múltiplas chamadas)
 let salvarProgressoTimeout = null;
 function salvarProgressoDebounced() {
@@ -23,7 +35,16 @@ function salvarProgressoDebounced() {
         if (typeof salvarProgresso === 'function') {
             salvarProgresso();
         }
-    }, 500); // Aguardar 500ms antes de salvar
+    }, 300); // Aguardar 300ms antes de salvar (reduzido de 500ms para melhor responsividade)
+}
+
+// Request Animation Frame para atualizações visuais suaves
+function atualizarInterfaceOtimizado(callback) {
+    if ('requestAnimationFrame' in window) {
+        requestAnimationFrame(callback);
+    } else {
+        callback();
+    }
 }
 
 // ==================== INICIALIZAÇÃO ====================
@@ -139,7 +160,7 @@ function exibirReferencias(referencias) {
             if (e.target.classList.contains('livro-ref')) {
                 const tooltip = e.target.dataset.tooltip;
                 if (tooltip) {
-                    alert(tooltip);
+                    showInfo(tooltip);
                 }
                 return;
             }
@@ -213,8 +234,11 @@ function atualizarProgressoDia() {
     const percentualDia = getCachedElement('percentualDia');
 
     if (barraDia && percentualDia) {
-        barraDia.style.width = percentual + '%';
-        percentualDia.textContent = percentual + '%';
+        // Usar requestAnimationFrame para animação suave
+        atualizarInterfaceOtimizado(() => {
+            barraDia.style.width = percentual + '%';
+            percentualDia.textContent = percentual + '%';
+        });
     }
 }
 
@@ -282,15 +306,17 @@ function atualizarTodasEstatisticas() {
     const percentualAnual = Math.round((diasCompletos / 365) * 100);
     const sequencia = calcularSequencia();
 
-    // Atualizar interface
-    getCachedElement('completosStat').textContent = diasCompletos;
-    getCachedElement('restantesStat').textContent = diasRestantes;
-    getCachedElement('sequenciaStat').textContent = sequencia;
+    // Atualizar interface com requestAnimationFrame
+    atualizarInterfaceOtimizado(() => {
+        getCachedElement('completosStat').textContent = diasCompletos;
+        getCachedElement('restantesStat').textContent = diasRestantes;
+        getCachedElement('sequenciaStat').textContent = sequencia;
 
-    const barraAnual = getCachedElement('barraAnual');
-    const percentualAnualEl = getCachedElement('percentualAnual');
-    barraAnual.style.width = percentualAnual + '%';
-    percentualAnualEl.textContent = percentualAnual + '%';
+        const barraAnual = getCachedElement('barraAnual');
+        const percentualAnualEl = getCachedElement('percentualAnual');
+        barraAnual.style.width = percentualAnual + '%';
+        percentualAnualEl.textContent = percentualAnual + '%';
+    });
 }
 
 function calcularSequencia() {
@@ -319,11 +345,12 @@ function inicializarEventosCalendario() {
     if (calendarioInicializado) return;
     calendarioInicializado = true;
 
-    // Preencher seletor de ano (ano atual -2 até 2050 para uso de longo prazo)
+    // Preencher seletor de ano (2026 até 2050)
     const seletorAno = getCachedElement('seletorAno');
     const anoAtual = new Date().getFullYear();
+    const anoInicio = Math.max(2026, anoAtual); // Começar de 2026 ou ano atual, o que for maior
 
-    for (let ano = anoAtual - 2; ano <= 2050; ano++) {
+    for (let ano = anoInicio; ano <= 2050; ano++) {
         const option = document.createElement('option');
         option.value = ano;
         option.textContent = ano;
@@ -383,9 +410,11 @@ function criarCalendarioHeatmap() {
 
 function renderizarMesCalendario() {
     const container = getCachedElement('heatmap');
-    container.innerHTML = '';
 
     const diasSemana = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+
+    // Usar DocumentFragment para melhor performance
+    const fragment = document.createDocumentFragment();
 
     // Container do mês
     const mesDiv = document.createElement('div');
@@ -454,10 +483,15 @@ function renderizarMesCalendario() {
     }
 
     mesDiv.appendChild(gridDiv);
-    container.appendChild(mesDiv);
+    fragment.appendChild(mesDiv);
 
-    // Atualizar destaque do dia selecionado
-    destacarDiaNoHeatmap(diaAtual);
+    // Limpar e adicionar de uma vez (reduzir reflows)
+    atualizarInterfaceOtimizado(() => {
+        container.innerHTML = '';
+        container.appendChild(fragment);
+        // Atualizar destaque do dia selecionado
+        destacarDiaNoHeatmap(diaAtual);
+    });
 }
 
 function destacarDiaNoHeatmap(dia) {
@@ -494,7 +528,7 @@ function configurarEventos() {
         // Se está tentando marcar como completo, mas nem todas as leituras foram marcadas
         if (e.target.checked && lidas < totalRefs) {
             e.target.checked = false; // Desmarcar
-            alert(`❌ Você precisa marcar todas as ${totalRefs} leituras antes de concluir o dia!\n\nLeituras marcadas: ${lidas}/${totalRefs}`);
+            showWarning(`Você precisa marcar todas as ${totalRefs} leituras antes de concluir o dia!\n\nLeituras marcadas: ${lidas}/${totalRefs}`);
             return;
         }
 
@@ -681,10 +715,17 @@ function abrirModalNovoCiclo() {
 
 async function confirmarNovoCiclo() {
     // Confirmar ação
-    const confirmacao = confirm(
+    const confirmacao = await customConfirm(
         'Você tem certeza que deseja limpar TODO o seu progresso?\n\n' +
         'Esta ação é PERMANENTE e não pode ser desfeita!\n\n' +
-        'Recomendamos exportar seu progresso antes de continuar.'
+        'Recomendamos exportar seu progresso antes de continuar.',
+        {
+            title: 'Confirmar Novo Ciclo',
+            type: 'danger',
+            confirmText: 'Sim, limpar tudo',
+            cancelText: 'Cancelar',
+            danger: true
+        }
     );
 
     if (!confirmacao) return;
@@ -716,11 +757,11 @@ async function confirmarNovoCiclo() {
         criarCalendarioHeatmap();
 
         // Mostrar mensagem de sucesso
-        alert('✅ Novo ciclo iniciado com sucesso!\n\nTodo o progresso foi limpo. Boa leitura!');
+        showSuccess('Novo ciclo iniciado com sucesso!\n\nTodo o progresso foi limpo. Boa leitura!');
 
     } catch (error) {
         console.error('Erro ao limpar progresso:', error);
-        alert('❌ Erro ao limpar progresso. Tente novamente mais tarde.');
+        showError('Erro ao limpar progresso. Tente novamente mais tarde.');
     }
 }
 
@@ -770,7 +811,13 @@ function configurarMenuUsuario() {
 
     // Botão sair
     btnSair?.addEventListener('click', async () => {
-        if (confirm('Deseja realmente sair?')) {
+        const confirmacao = await customConfirm('Deseja realmente sair?', {
+            title: 'Sair',
+            confirmText: 'Sim, sair',
+            cancelText: 'Cancelar'
+        });
+
+        if (confirmacao) {
             try {
                 const response = await fetch('/api/logout', {
                     method: 'POST',
@@ -780,7 +827,7 @@ function configurarMenuUsuario() {
                 if (response.ok) {
                     window.location.href = '/';
                 } else {
-                    alert('Erro ao sair. Tente novamente.');
+                    showError('Erro ao sair. Tente novamente.');
                 }
             } catch (error) {
                 console.error('Erro ao fazer logout:', error);
@@ -817,7 +864,7 @@ function configurarMenuUsuario() {
 
         // Validar confirmação
         if (senhaNova !== senhaConfirma) {
-            alert('A nova senha e a confirmação não coincidem!');
+            showError('A nova senha e a confirmação não coincidem!');
             return;
         }
 
@@ -833,7 +880,7 @@ function configurarMenuUsuario() {
             });
 
             if (!loginResponse.ok) {
-                alert('Senha atual incorreta!');
+                showError('Senha atual incorreta!');
                 return;
             }
 
@@ -845,16 +892,16 @@ function configurarMenuUsuario() {
             });
 
             if (updateResponse.ok) {
-                alert('Senha alterada com sucesso!');
+                showSuccess('Senha alterada com sucesso!');
                 modalTrocarSenha.classList.remove('show');
                 formTrocarSenha.reset();
             } else {
                 const error = await updateResponse.json();
-                alert('Erro ao trocar senha: ' + (error.error || 'Erro desconhecido'));
+                showError('Erro ao trocar senha: ' + (error.error || 'Erro desconhecido'));
             }
         } catch (error) {
             console.error('Erro ao trocar senha:', error);
-            alert('Erro ao trocar senha. Tente novamente.');
+            showError('Erro ao trocar senha. Tente novamente.');
         }
     });
 

@@ -9,6 +9,9 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 
+// Configurar fuso horário para America/Sao_Paulo
+process.env.TZ = 'America/Sao_Paulo';
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const rootDir = path.join(__dirname, '../..');
@@ -84,6 +87,67 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+// ==================== RATE LIMITING DE LOGIN ====================
+const loginAttempts = new Map(); // { username: { count: number, lastAttempt: Date, blockedUntil: Date } }
+const MAX_ATTEMPTS = 5;
+const BLOCK_DURATION = 15 * 60 * 1000; // 15 minutos
+const RESET_WINDOW = 5 * 60 * 1000; // 5 minutos
+
+function checkLoginAttempts(username) {
+  const now = Date.now();
+  const attempt = loginAttempts.get(username);
+
+  if (!attempt) {
+    return { allowed: true };
+  }
+
+  // Se está bloqueado
+  if (attempt.blockedUntil && now < attempt.blockedUntil) {
+    const minutesLeft = Math.ceil((attempt.blockedUntil - now) / 60000);
+    return {
+      allowed: false,
+      message: `Muitas tentativas falhas. Tente novamente em ${minutesLeft} minuto(s).`
+    };
+  }
+
+  // Resetar contador se passou o tempo da janela
+  if (now - attempt.lastAttempt > RESET_WINDOW) {
+    loginAttempts.delete(username);
+    return { allowed: true };
+  }
+
+  return { allowed: true };
+}
+
+function registerFailedAttempt(username) {
+  const now = Date.now();
+  const attempt = loginAttempts.get(username) || { count: 0, lastAttempt: now };
+
+  attempt.count++;
+  attempt.lastAttempt = now;
+
+  if (attempt.count >= MAX_ATTEMPTS) {
+    attempt.blockedUntil = now + BLOCK_DURATION;
+    attempt.count = 0; // Resetar contador
+  }
+
+  loginAttempts.set(username, attempt);
+}
+
+function clearLoginAttempts(username) {
+  loginAttempts.delete(username);
+}
+
+// Limpar tentativas antigas a cada 30 minutos
+setInterval(() => {
+  const now = Date.now();
+  for (const [username, attempt] of loginAttempts.entries()) {
+    if (attempt.blockedUntil && now > attempt.blockedUntil) {
+      loginAttempts.delete(username);
+    }
+  }
+}, 30 * 60 * 1000);
+
 // ==================== ROTAS DE AUTENTICAÇÃO ====================
 
 // Login
@@ -97,11 +161,19 @@ app.post('/api/login', (req, res) => {
       return res.status(400).json({ error: 'Username e senha são obrigatórios' });
     }
 
+    // Verificar rate limiting
+    const attemptCheck = checkLoginAttempts(username);
+    if (!attemptCheck.allowed) {
+      console.log(`🚫 Login bloqueado por rate limiting: ${username}`);
+      return res.status(429).json({ error: attemptCheck.message });
+    }
+
     const usuario = db.prepare('SELECT * FROM usuarios WHERE username = ?').get(username);
     console.log(`👤 Usuário encontrado: ${usuario ? 'Sim' : 'Não'}`);
 
     if (!usuario) {
       console.log('❌ Usuário não encontrado no banco');
+      registerFailedAttempt(username);
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
 
@@ -110,8 +182,12 @@ app.post('/api/login', (req, res) => {
 
     if (!senhaValida) {
       console.log('❌ Senha incorreta');
+      registerFailedAttempt(username);
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
+
+    // Login bem-sucedido - limpar tentativas
+    clearLoginAttempts(username);
 
     req.session.userId = usuario.id;
     req.session.isAdmin = usuario.is_admin === 1;
@@ -315,9 +391,9 @@ app.post('/api/progresso', requireAuth, (req, res) => {
 
   const stmt = db.prepare(`
     INSERT INTO progresso (usuario_id, dia, concluido, data_conclusao)
-    VALUES (?, ?, ?, datetime('now'))
+    VALUES (?, ?, ?, datetime('now', 'localtime'))
     ON CONFLICT(usuario_id, dia)
-    DO UPDATE SET concluido = ?, data_conclusao = datetime('now')
+    DO UPDATE SET concluido = ?, data_conclusao = datetime('now', 'localtime')
   `);
 
   stmt.run(req.session.userId, dia, concluido ? 1 : 0, concluido ? 1 : 0);
@@ -385,9 +461,9 @@ app.post('/api/admin/progresso/:userId', requireAdmin, (req, res) => {
 
   const stmt = db.prepare(`
     INSERT INTO progresso (usuario_id, dia, concluido, data_conclusao)
-    VALUES (?, ?, ?, datetime('now'))
+    VALUES (?, ?, ?, datetime('now', 'localtime'))
     ON CONFLICT(usuario_id, dia)
-    DO UPDATE SET concluido = ?, data_conclusao = datetime('now')
+    DO UPDATE SET concluido = ?, data_conclusao = datetime('now', 'localtime')
   `);
 
   stmt.run(userId, dia, concluido ? 1 : 0, concluido ? 1 : 0);
