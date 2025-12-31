@@ -93,11 +93,9 @@ npm run init-db    # Inicializar banco
 
 ## 🚀 Deploy
 
-Pronto para deploy em:
-- VPS (PM2 + Nginx)
+Deploy em:
 - Railway.app
-- Render.com
-- Heroku
+
 
 Veja `docs/README.md` para instruções completas.
 
@@ -107,4 +105,4 @@ MIT
 
 ---
 
-**Versão**: 2.0.0 - Estrutura Profissional Organizada 🎉
+
