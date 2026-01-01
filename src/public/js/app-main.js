@@ -923,36 +923,34 @@ function configurarMenuUsuario() {
             return;
         }
 
+        // Validar senha forte (mesma validação do api-client.js)
+        if (typeof validarSenhaForte === 'function') {
+            const validacao = validarSenhaForte(senhaNova);
+            if (!validacao.valida) {
+                showError(validacao.erro);
+                return;
+            }
+        }
+
         try {
-            // Primeiro, verificar a senha atual fazendo login
-            const loginResponse = await fetch('/api/login', {
+            // Usar o endpoint correto para trocar própria senha
+            const response = await fetch('/api/usuarios/minha-senha', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    username: window.currentUser.username,
-                    senha: senhaAtual
+                    senhaAtual: senhaAtual,
+                    novaSenha: senhaNova
                 })
             });
 
-            if (!loginResponse.ok) {
-                showError('Senha atual incorreta!');
-                return;
-            }
+            const data = await response.json();
 
-            // Se a senha está correta, atualizar
-            const updateResponse = await fetch(`/api/usuarios/${window.currentUser.id}/senha`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ novaSenha: senhaNova })
-            });
-
-            if (updateResponse.ok) {
+            if (response.ok && data.success) {
                 showSuccess('Senha alterada com sucesso!');
                 modalTrocarSenha.classList.remove('show');
                 formTrocarSenha.reset();
             } else {
-                const error = await updateResponse.json();
-                showError('Erro ao trocar senha: ' + (error.error || 'Erro desconhecido'));
+                showError(data.error || 'Erro ao alterar senha');
             }
         } catch (error) {
             console.error('Erro ao trocar senha:', error);

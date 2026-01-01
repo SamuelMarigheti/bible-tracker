@@ -104,7 +104,10 @@ async function checkAuth() {
 
         // Verificar se deve trocar senha (primeiro login)
         if (deveTrocarSenha) {
+            console.log('⚠️ Usuário precisa trocar senha. Mostrando modal obrigatório...');
             mostrarModalTrocarSenhaObrigatorio();
+        } else {
+            console.log('✅ Usuário autenticado. Senha OK.');
         }
 
         return true;
@@ -276,14 +279,19 @@ function mostrarModalTrocarSenhaObrigatorio() {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                showSuccess('Senha alterada com sucesso!\n\nVocê já pode usar sua nova senha.');
+                console.log('✅ Senha alterada com sucesso! Recarregando página...');
+                showSuccess('Senha alterada com sucesso!\n\nA página será recarregada.');
+
+                // Fechar modal completamente
                 modal.classList.remove('show');
+                modal.style.display = 'none'; // Garantir que está escondido
                 form.reset();
                 deveTrocarSenha = false;
 
-                // Iniciar auto-atualização após troca de senha bem-sucedida
-                console.log('🔓 Senha alterada. Iniciando auto-atualização...');
-                iniciarAutoAtualizacao();
+                // Recarregar a página para garantir inicialização completa
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
             } else {
                 showError(data.error || 'Erro ao alterar senha');
             }
@@ -376,18 +384,19 @@ function pararAutoAtualizacao() {
         // Iniciar detecção de atividade para timeout de sessão
         iniciarDeteccaoAtividade();
 
-        // Aguardar carregamento do DOM
+        // SEMPRE carregar progresso, mesmo se deve trocar senha
+        // Isso garante que a interface não fique em branco
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', async () => {
                 await carregarProgresso();
-                // Iniciar auto-atualização após carregar progresso
+                // Iniciar auto-atualização SOMENTE se não deve trocar senha
                 if (!deveTrocarSenha) {
                     iniciarAutoAtualizacao();
                 }
             });
         } else {
             await carregarProgresso();
-            // Iniciar auto-atualização após carregar progresso
+            // Iniciar auto-atualização SOMENTE se não deve trocar senha
             if (!deveTrocarSenha) {
                 iniciarAutoAtualizacao();
             }
