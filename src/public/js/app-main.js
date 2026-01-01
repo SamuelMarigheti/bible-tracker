@@ -1,8 +1,9 @@
 // ==================== VARIÁVEIS GLOBAIS ====================
 let diaAtual = 1;
+// IMPORTANTE: Sempre inicializar todas as propriedades para evitar undefined
 let progressoData = {
-    progresso: {}, // { dia: { completo: bool, referencias: [] } }
-    referenciasLidas: {}, // { dia: [indices das refs lidas] }
+    progresso: {}, // { dia: boolean } - dia completado ou não
+    referenciasLidas: {}, // { dia: [indices das refs lidas] } - CRÍTICO: sempre deve existir
     stats: { totalDias: 365, diasLidos: 0, streak: 0 }
 };
 
@@ -176,6 +177,12 @@ function exibirReferencias(referencias) {
     // Resetar contexto do último livro ao trocar de dia
     if (typeof resetarUltimoLivro === 'function') {
         resetarUltimoLivro();
+    }
+
+    // Garantir que referenciasLidas existe (proteção contra undefined)
+    if (!progressoData.referenciasLidas) {
+        progressoData.referenciasLidas = {};
+        console.warn('⚠️ progressoData.referenciasLidas estava undefined, foi inicializado');
     }
 
     // Recuperar referências lidas deste dia

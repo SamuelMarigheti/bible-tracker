@@ -146,14 +146,25 @@ window.salvarProgresso = async function() {
 // Substituir função carregarProgresso original
 const _carregarProgressoOriginal = window.carregarProgresso;
 window.carregarProgresso = async function() {
-    if (!currentUser) return;
+    if (!currentUser) {
+        console.warn('⚠️ carregarProgresso: currentUser não definido');
+        return;
+    }
+
+    console.log('📊 Carregando progresso do usuário:', currentUser.nome);
 
     try {
         const response = await fetch('/api/progresso');
         const dados = await response.json();
 
         if (dados && dados.length > 0) {
+            console.log(`✅ Progresso carregado: ${dados.length} dias com dados`);
             progressoData.progresso = {};
+            // Garantir que referenciasLidas existe
+            if (!progressoData.referenciasLidas) {
+                progressoData.referenciasLidas = {};
+            }
+
             dados.forEach(item => {
                 progressoData.progresso[item.dia] = item.concluido === 1;
             });
@@ -165,8 +176,10 @@ window.carregarProgresso = async function() {
                 streak: 0
             };
         } else {
+            console.log('📝 Nenhum progresso encontrado. Inicializando novo progresso.');
             progressoData = {
                 progresso: {},
+                referenciasLidas: {}, // ← CRÍTICO: Inicializar para evitar undefined
                 inicio: new Date().toISOString().split('T')[0],
                 stats: { totalDias: 365, diasLidos: 0, streak: 0 }
             };
@@ -183,6 +196,7 @@ window.carregarProgresso = async function() {
         console.error('Erro ao carregar progresso:', err);
         progressoData = {
             progresso: {},
+            referenciasLidas: {}, // ← CRÍTICO: Inicializar para evitar undefined
             inicio: new Date().toISOString().split('T')[0],
             stats: { totalDias: 365, diasLidos: 0, streak: 0 }
         };

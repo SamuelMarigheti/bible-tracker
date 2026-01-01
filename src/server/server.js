@@ -250,15 +250,31 @@ app.get('/api/session', (req, res) => {
 
 // Obter data/hora atual do servidor (para consistência de timezone)
 app.get('/api/server-time', (req, res) => {
-  const now = new Date();
+  // UTC atual
+  const nowUTC = new Date();
+
+  // Converter para America/Sao_Paulo (UTC-3)
+  // Importante: Ajustar para horário de Brasília
+  const offsetSaoPaulo = -3 * 60; // -3 horas em minutos
+  const nowSaoPaulo = new Date(nowUTC.getTime() + offsetSaoPaulo * 60 * 1000);
+
+  // Calcular dia do ano baseado em São Paulo
+  const inicioAnoSaoPaulo = new Date(nowSaoPaulo.getUTCFullYear(), 0, 1);
+  inicioAnoSaoPaulo.setMinutes(inicioAnoSaoPaulo.getMinutes() + offsetSaoPaulo);
+
+  const diffMs = nowSaoPaulo - inicioAnoSaoPaulo;
+  const dayOfYear = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+
+  console.log(`🕐 Server Time Request - UTC: ${nowUTC.toISOString()}, São Paulo: ${nowSaoPaulo.toISOString()}, Dia: ${dayOfYear}`);
+
   res.json({
-    timestamp: now.getTime(),
-    iso: now.toISOString(),
-    timezone: process.env.TZ || 'UTC',
-    year: now.getFullYear(),
-    month: now.getMonth(),
-    date: now.getDate(),
-    dayOfYear: Math.floor((now - new Date(now.getFullYear(), 0, 1)) / (1000 * 60 * 60 * 24)) + 1
+    timestamp: nowSaoPaulo.getTime(),
+    iso: nowSaoPaulo.toISOString(),
+    timezone: 'America/Sao_Paulo',
+    year: nowSaoPaulo.getUTCFullYear(),
+    month: nowSaoPaulo.getUTCMonth(),
+    date: nowSaoPaulo.getUTCDate(),
+    dayOfYear: dayOfYear
   });
 });
 
