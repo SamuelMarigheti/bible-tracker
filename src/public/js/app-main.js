@@ -6,6 +6,11 @@ let progressoData = {
     stats: { totalDias: 365, diasLidos: 0, streak: 0 }
 };
 
+// Cache da data do servidor para evitar múltiplas requisições
+let serverTimeCache = null;
+let serverTimeCacheExpiry = 0;
+let currentServerDate = null; // Data atual do servidor como objeto Date
+
 // Cache de elementos DOM para performance
 const domCache = {};
 function getCachedElement(id) {
@@ -49,6 +54,9 @@ function atualizarInterfaceOtimizado(callback) {
 
 // ==================== INICIALIZAÇÃO ====================
 document.addEventListener('DOMContentLoaded', async () => {
+    // Buscar hora do servidor primeiro para garantir timezone correto
+    await getServerTime();
+
     // Carregar dados do backend
     if (typeof carregarProgresso === 'function') {
         await carregarProgresso();
@@ -58,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     await carregarConquistasDesbloqueadas();
 
     // Inicializar interface
-    irParaDiaAtual();
+    await irParaDiaAtual();
     atualizarTodasEstatisticas();
     criarCalendarioHeatmap();
     configurarEventos();
@@ -66,26 +74,73 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // ==================== FUNÇÕES DE DATA ====================
+
+// Buscar hora atual do servidor (com cache de 5 minutos)
+async function getServerTime() {
+    const now = Date.now();
+
+    // Usar cache se ainda válido (5 minutos)
+    if (serverTimeCache && now < serverTimeCacheExpiry) {
+        return serverTimeCache;
+    }
+
+    try {
+        const response = await fetch('/api/server-time');
+        const data = await response.json();
+
+        // Cachear por 5 minutos
+        serverTimeCache = data;
+        serverTimeCacheExpiry = now + (5 * 60 * 1000);
+
+        // Criar objeto Date a partir da data do servidor
+        currentServerDate = new Date(data.timestamp);
+
+        // Atualizar variáveis do calendário com a data do servidor
+        if (typeof mesAtualCalendario !== 'undefined') {
+            mesAtualCalendario = data.month;
+            anoAtualCalendario = data.year;
+        }
+
+        console.log(`🕐 Hora do servidor: ${data.iso} (${data.timezone}), Dia do ano: ${data.dayOfYear}`);
+        return data;
+    } catch (error) {
+        console.error('Erro ao buscar hora do servidor, usando hora local:', error);
+        // Fallback para hora local se falhar
+        const hoje = new Date();
+        const inicio = new Date(hoje.getFullYear(), 0, 1);
+        const diaDoAno = Math.floor((hoje - inicio) / (1000 * 60 * 60 * 24)) + 1;
+
+        // Definir data atual do servidor como hora local em fallback
+        currentServerDate = hoje;
+
+        return {
+            timestamp: hoje.getTime(),
+            iso: hoje.toISOString(),
+            timezone: 'Local',
+            year: hoje.getFullYear(),
+            month: hoje.getMonth(),
+            date: hoje.getDate(),
+            dayOfYear: diaDoAno
+        };
+    }
+}
+
 function atualizarDataAtual() {
     const agora = new Date();
     const opcoes = {
         weekday: 'long',
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: 'numeric',
+        timeZone: 'America/Sao_Paulo' // Usar timezone consistente com servidor
     };
     const dataFormatada = agora.toLocaleDateString('pt-BR', opcoes);
     document.getElementById('dataAtual').textContent = dataFormatada;
 }
 
-function irParaDiaAtual() {
-    const hoje = new Date();
-    const inicio = new Date(hoje.getFullYear(), 0, 1);
-    const diff = hoje - inicio;
-    const umDia = 1000 * 60 * 60 * 24;
-    const diaDoAno = Math.floor(diff / umDia) + 1;
-
-    diaAtual = Math.min(diaDoAno, 365);
+async function irParaDiaAtual() {
+    const serverTime = await getServerTime();
+    diaAtual = Math.min(serverTime.dayOfYear, 365);
     exibirDia(diaAtual);
 }
 
@@ -464,8 +519,8 @@ function renderizarMesCalendario() {
             diaDiv.classList.add('concluido');
         }
 
-        // Destacar dia atual
-        const hoje = new Date();
+        // Destacar dia atual (usar data do servidor se disponível)
+        const hoje = currentServerDate || new Date();
         if (dataAtual.toDateString() === hoje.toDateString()) {
             diaDiv.classList.add('hoje');
         }

@@ -280,6 +280,10 @@ function mostrarModalTrocarSenhaObrigatorio() {
                 modal.classList.remove('show');
                 form.reset();
                 deveTrocarSenha = false;
+
+                // Iniciar auto-atualização após troca de senha bem-sucedida
+                console.log('🔓 Senha alterada. Iniciando auto-atualização...');
+                iniciarAutoAtualizacao();
             } else {
                 showError(data.error || 'Erro ao alterar senha');
             }

@@ -248,6 +248,20 @@ app.get('/api/session', (req, res) => {
   });
 });
 
+// Obter data/hora atual do servidor (para consistência de timezone)
+app.get('/api/server-time', (req, res) => {
+  const now = new Date();
+  res.json({
+    timestamp: now.getTime(),
+    iso: now.toISOString(),
+    timezone: process.env.TZ || 'UTC',
+    year: now.getFullYear(),
+    month: now.getMonth(),
+    date: now.getDate(),
+    dayOfYear: Math.floor((now - new Date(now.getFullYear(), 0, 1)) / (1000 * 60 * 60 * 24)) + 1
+  });
+});
+
 // ==================== ROTAS DE USUÁRIOS (ADMIN) ====================
 
 // Listar todos os usuários

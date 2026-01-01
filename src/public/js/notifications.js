@@ -1,5 +1,144 @@
 // ==================== SISTEMA DE NOTIFICAÇÕES CUSTOMIZADAS ====================
 
+// Armazenar último evento de clique para posicionamento inteligente
+let lastClickEvent = null;
+let lastActiveElement = null;
+
+// Capturar cliques globais
+document.addEventListener('click', (e) => {
+    lastClickEvent = e;
+    lastActiveElement = e.target;
+}, true);
+
+/**
+ * Calcula a melhor posição para exibir a notificação próxima ao elemento/clique
+ * @param {HTMLElement} notification - Elemento da notificação
+ * @returns {object} Posição {top, left, right, bottom, arrow}
+ */
+function calculateNotificationPosition(notification) {
+    const margin = 20; // Margem das bordas da tela
+    const offset = 15; // Distância do elemento clicado
+
+    // Verificar se é mobile
+    const isMobile = window.innerWidth <= 768;
+
+    // Em mobile, centralizar na parte inferior
+    if (isMobile) {
+        return {
+            bottom: '20px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            right: 'auto',
+            top: 'auto',
+            arrow: null
+        };
+    }
+
+    // Se temos um clique recente (últimos 2 segundos), usar sua posição
+    if (lastClickEvent && (Date.now() - lastClickEvent.timeStamp < 2000)) {
+        const clickX = lastClickEvent.clientX;
+        const clickY = lastClickEvent.clientY;
+
+        const notifWidth = 350; // Largura aproximada da notificação
+        const notifHeight = 120; // Altura aproximada
+
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        let top, left, arrowDirection = null;
+
+        // Verificar se há espaço à direita do clique
+        if (clickX + notifWidth + offset + margin < viewportWidth) {
+            left = clickX + offset;
+            arrowDirection = 'left'; // Seta aponta para esquerda
+        }
+        // Se não, tentar à esquerda
+        else if (clickX - notifWidth - offset > margin) {
+            left = clickX - notifWidth - offset;
+            arrowDirection = 'right'; // Seta aponta para direita
+        }
+        // Se não couber em nenhum lado, centralizar horizontalmente
+        else {
+            left = Math.max(margin, (viewportWidth - notifWidth) / 2);
+            arrowDirection = null; // Sem seta quando centralizado
+        }
+
+        // Verificar se há espaço abaixo do clique
+        if (clickY + notifHeight + offset + margin < viewportHeight) {
+            top = clickY + offset;
+            // Se tem seta lateral, ajustar para não ter seta no topo
+        }
+        // Se não, tentar acima
+        else if (clickY - notifHeight - offset > margin) {
+            top = clickY - notifHeight - offset;
+        }
+        // Se não couber, posicionar próximo ao topo
+        else {
+            top = margin;
+        }
+
+        return {
+            top: `${top}px`,
+            left: `${left}px`,
+            right: 'auto',
+            bottom: 'auto',
+            arrow: arrowDirection
+        };
+    }
+
+    // Fallback: usar último elemento ativo se disponível
+    if (lastActiveElement) {
+        try {
+            const rect = lastActiveElement.getBoundingClientRect();
+            const notifWidth = 350;
+            const notifHeight = 120;
+
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+
+            let top, left, arrowDirection = null;
+
+            // Posicionar abaixo e à direita do elemento
+            if (rect.right + notifWidth + offset < viewportWidth) {
+                left = rect.right + offset;
+                arrowDirection = 'left';
+            } else if (rect.left - notifWidth - offset > margin) {
+                left = rect.left - notifWidth - offset;
+                arrowDirection = 'right';
+            } else {
+                left = Math.max(margin, (viewportWidth - notifWidth) / 2);
+            }
+
+            if (rect.bottom + notifHeight + offset < viewportHeight) {
+                top = rect.bottom + offset;
+            } else if (rect.top - notifHeight - offset > margin) {
+                top = rect.top - notifHeight - offset;
+            } else {
+                top = margin;
+            }
+
+            return {
+                top: `${top}px`,
+                left: `${left}px`,
+                right: 'auto',
+                bottom: 'auto',
+                arrow: arrowDirection
+            };
+        } catch (e) {
+            // Se falhar, usar posição padrão
+        }
+    }
+
+    // Posição padrão: canto superior direito
+    return {
+        top: '20px',
+        right: '20px',
+        left: 'auto',
+        bottom: 'auto',
+        arrow: null
+    };
+}
+
 /**
  * Mostra uma notificação toast customizada
  * @param {string} message - Mensagem a ser exibida
@@ -23,7 +162,15 @@ function showNotification(message, type = 'info', duration = 4000) {
 
     const notification = document.createElement('div');
     notification.className = `custom-notification ${type}`;
+
+    // Calcular posição primeiro para saber se precisa de seta
+    const position = calculateNotificationPosition(notification);
+
+    // Adicionar seta se necessário
+    const arrowHTML = position.arrow ? `<div class="notification-arrow arrow-${position.arrow}"></div>` : '';
+
     notification.innerHTML = `
+        ${arrowHTML}
         <div class="notification-header">
             <i class="fas ${icons[type]} notification-icon"></i>
             <div class="notification-title">${titles[type]}</div>
@@ -35,6 +182,24 @@ function showNotification(message, type = 'info', duration = 4000) {
     `;
 
     document.body.appendChild(notification);
+
+    // Aplicar posicionamento
+    notification.style.top = position.top || 'auto';
+    notification.style.left = position.left || 'auto';
+    notification.style.right = position.right || 'auto';
+    notification.style.bottom = position.bottom || 'auto';
+
+    // Forçar reflow para animação funcionar
+    notification.offsetHeight;
+
+    // Aplicar transform após animação inicial (se necessário)
+    if (position.transform) {
+        setTimeout(() => {
+            if (notification && notification.parentNode) {
+                notification.style.transform = position.transform + ' scale(1)';
+            }
+        }, 300);
+    }
 
     // Auto remover após duration
     if (duration > 0) {
