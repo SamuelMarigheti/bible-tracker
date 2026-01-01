@@ -251,7 +251,9 @@ function toggleReferenciaLida(index) {
     const refIndex = progressoData.referenciasLidas[diaAtual].indexOf(index);
     const refItem = document.querySelector(`.ref-checkbox[data-index="${index}"]`)?.parentElement;
 
-    if (refIndex > -1) {
+    const wasLida = refIndex > -1;
+
+    if (wasLida) {
         // Remover
         progressoData.referenciasLidas[diaAtual].splice(refIndex, 1);
         refItem?.classList.remove('lida');
@@ -259,6 +261,11 @@ function toggleReferenciaLida(index) {
         // Adicionar
         progressoData.referenciasLidas[diaAtual].push(index);
         refItem?.classList.add('lida');
+    }
+
+    // Salvar no banco de dados
+    if (typeof salvarReferenciaLida === 'function') {
+        salvarReferenciaLida(diaAtual, index, !wasLida);
     }
 
     atualizarContadorReferencias();
@@ -293,11 +300,39 @@ function atualizarProgressoDia() {
     const barraDia = getCachedElement('barraDia');
     const percentualDia = getCachedElement('percentualDia');
 
+    // Atualizar badge de progresso
+    const badgeProgressoDia = getCachedElement('badgeProgressoDia');
+    const badgeTexto = getCachedElement('badgeTexto');
+    const badgePercentual = getCachedElement('badgePercentual');
+
     if (barraDia && percentualDia) {
         // Usar requestAnimationFrame para animação suave
         atualizarInterfaceOtimizado(() => {
             barraDia.style.width = percentual + '%';
             percentualDia.textContent = percentual + '%';
+
+            // Atualizar badge
+            if (badgeTexto && badgePercentual && badgeProgressoDia) {
+                badgeTexto.textContent = `${lidas}/${totalRefs} leituras`;
+                badgePercentual.textContent = `${percentual}%`;
+
+                // Adicionar animação de pulso
+                badgeProgressoDia.classList.remove('pulse-animation');
+                void badgeProgressoDia.offsetWidth; // Forçar reflow
+                badgeProgressoDia.classList.add('pulse-animation');
+
+                // Remover classe após a animação
+                setTimeout(() => {
+                    badgeProgressoDia.classList.remove('pulse-animation');
+                }, 500);
+
+                // Adicionar classe 'completo' quando 100%
+                if (percentual === 100) {
+                    badgeProgressoDia.classList.add('completo');
+                } else {
+                    badgeProgressoDia.classList.remove('completo');
+                }
+            }
         });
     }
 }
@@ -351,6 +386,11 @@ function marcarTodasReferencias() {
         progressoData.referenciasLidas[diaAtual] = Array.from({length: totalRefs}, (_, i) => i);
         document.querySelectorAll('.ref-checkbox').forEach(cb => cb.checked = true);
         document.querySelectorAll('.ref-item').forEach(item => item.classList.add('lida'));
+    }
+
+    // Salvar no banco de dados usando bulk update
+    if (typeof salvarReferenciasLidasBulk === 'function') {
+        salvarReferenciasLidasBulk(diaAtual, progressoData.referenciasLidas[diaAtual] || []);
     }
 
     atualizarContadorReferencias();

@@ -149,15 +149,17 @@ window.carregarProgresso = async function() {
     if (!currentUser) return;
 
     try {
+        // Carregar progresso de dias completos
         const response = await fetch('/api/progresso');
         const dados = await response.json();
 
+        // Carregar referências lidas individuais
+        const refResponse = await fetch('/api/referencias-lidas');
+        const referenciasLidas = await refResponse.json();
+
         if (dados && dados.length > 0) {
             progressoData.progresso = {};
-            // Garantir que referenciasLidas existe
-            if (!progressoData.referenciasLidas) {
-                progressoData.referenciasLidas = {};
-            }
+            progressoData.referenciasLidas = referenciasLidas || {};
 
             dados.forEach(item => {
                 progressoData.progresso[item.dia] = item.concluido === 1;
@@ -172,7 +174,7 @@ window.carregarProgresso = async function() {
         } else {
             progressoData = {
                 progresso: {},
-                referenciasLidas: {}, // ← CRÍTICO: Inicializar para evitar undefined
+                referenciasLidas: referenciasLidas || {},
                 inicio: new Date().toISOString().split('T')[0],
                 stats: { totalDias: 365, diasLidos: 0, streak: 0 }
             };
@@ -185,11 +187,15 @@ window.carregarProgresso = async function() {
         if (typeof criarCalendarioHeatmap === 'function') {
             criarCalendarioHeatmap();
         }
+        // Atualizar visualização do dia atual se estiver na página
+        if (typeof atualizarProgressoDia === 'function') {
+            atualizarProgressoDia();
+        }
     } catch (err) {
         console.error('Erro ao carregar progresso:', err);
         progressoData = {
             progresso: {},
-            referenciasLidas: {}, // ← CRÍTICO: Inicializar para evitar undefined
+            referenciasLidas: {},
             inicio: new Date().toISOString().split('T')[0],
             stats: { totalDias: 365, diasLidos: 0, streak: 0 }
         };
@@ -222,6 +228,36 @@ window.carregarConquistas = async function() {
     } catch (err) {
         console.error('Erro ao carregar conquistas:', err);
         return [];
+    }
+};
+
+// Salvar referência lida individual
+window.salvarReferenciaLida = async function(dia, referenciaIndex, lida) {
+    if (!currentUser) return;
+
+    try {
+        await fetch('/api/referencias-lidas', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dia, referenciaIndex, lida })
+        });
+    } catch (err) {
+        console.error('Erro ao salvar referência lida:', err);
+    }
+};
+
+// Salvar múltiplas referências de uma vez (bulk)
+window.salvarReferenciasLidasBulk = async function(dia, indices) {
+    if (!currentUser) return;
+
+    try {
+        await fetch('/api/referencias-lidas/bulk', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dia, indices })
+        });
+    } catch (err) {
+        console.error('Erro ao salvar referências em lote:', err);
     }
 };
 

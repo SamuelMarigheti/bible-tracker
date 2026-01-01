@@ -50,8 +50,19 @@ db.exec(`
     UNIQUE(usuario_id, conquista_id)
   );
 
+  CREATE TABLE IF NOT EXISTS referencias_lidas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    usuario_id INTEGER NOT NULL,
+    dia INTEGER NOT NULL,
+    referencia_index INTEGER NOT NULL,
+    lida_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    UNIQUE(usuario_id, dia, referencia_index)
+  );
+
   CREATE INDEX IF NOT EXISTS idx_progresso_usuario ON progresso(usuario_id);
   CREATE INDEX IF NOT EXISTS idx_conquistas_usuario ON conquistas(usuario_id);
+  CREATE INDEX IF NOT EXISTS idx_referencias_usuario_dia ON referencias_lidas(usuario_id, dia);
 `);
 
 // Migração: Adicionar coluna deve_trocar_senha se não existir

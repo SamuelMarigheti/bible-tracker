@@ -421,6 +421,9 @@ app.post('/api/progresso/limpar', requireAuth, (req, res) => {
     // Deletar conquistas
     db.prepare('DELETE FROM conquistas WHERE usuario_id = ?').run(req.session.userId);
 
+    // Deletar referências lidas
+    db.prepare('DELETE FROM referencias_lidas WHERE usuario_id = ?').run(req.session.userId);
+
     res.json({ success: true });
   } catch (error) {
     console.error('❌ Erro ao limpar progresso:', error);
@@ -477,6 +480,90 @@ app.post('/api/admin/progresso/:userId', requireAdmin, (req, res) => {
 
   stmt.run(userId, dia, concluido ? 1 : 0, concluido ? 1 : 0);
   res.json({ success: true });
+});
+
+// ==================== ROTAS DE REFERÊNCIAS LIDAS ====================
+
+// Obter referências lidas do usuário
+app.get('/api/referencias-lidas', requireAuth, (req, res) => {
+  try {
+    const referencias = db.prepare(`
+      SELECT dia, referencia_index
+      FROM referencias_lidas
+      WHERE usuario_id = ?
+      ORDER BY dia, referencia_index
+    `).all(req.session.userId);
+
+    // Organizar por dia
+    const porDia = {};
+    referencias.forEach(ref => {
+      if (!porDia[ref.dia]) {
+        porDia[ref.dia] = [];
+      }
+      porDia[ref.dia].push(ref.referencia_index);
+    });
+
+    res.json(porDia);
+  } catch (error) {
+    console.error('❌ Erro ao carregar referências lidas:', error);
+    res.status(500).json({ error: 'Erro ao carregar referências lidas' });
+  }
+});
+
+// Salvar referência lida (marcar/desmarcar)
+app.post('/api/referencias-lidas', requireAuth, (req, res) => {
+  try {
+    const { dia, referenciaIndex, lida } = req.body;
+
+    if (lida) {
+      // Inserir referência como lida
+      const stmt = db.prepare(`
+        INSERT OR IGNORE INTO referencias_lidas (usuario_id, dia, referencia_index)
+        VALUES (?, ?, ?)
+      `);
+      stmt.run(req.session.userId, dia, referenciaIndex);
+    } else {
+      // Remover referência
+      const stmt = db.prepare(`
+        DELETE FROM referencias_lidas
+        WHERE usuario_id = ? AND dia = ? AND referencia_index = ?
+      `);
+      stmt.run(req.session.userId, dia, referenciaIndex);
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ Erro ao salvar referência lida:', error);
+    res.status(500).json({ error: 'Erro ao salvar referência lida' });
+  }
+});
+
+// Salvar múltiplas referências de uma vez (bulk update)
+app.post('/api/referencias-lidas/bulk', requireAuth, (req, res) => {
+  try {
+    const { dia, indices } = req.body;
+
+    // Primeiro, limpar todas as referências do dia
+    db.prepare('DELETE FROM referencias_lidas WHERE usuario_id = ? AND dia = ?')
+      .run(req.session.userId, dia);
+
+    // Depois, inserir as novas
+    if (indices && indices.length > 0) {
+      const stmt = db.prepare(`
+        INSERT INTO referencias_lidas (usuario_id, dia, referencia_index)
+        VALUES (?, ?, ?)
+      `);
+
+      indices.forEach(index => {
+        stmt.run(req.session.userId, dia, index);
+      });
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ Erro ao salvar referências em lote:', error);
+    res.status(500).json({ error: 'Erro ao salvar referências' });
+  }
 });
 
 // ==================== ROTAS DE CONQUISTAS ====================

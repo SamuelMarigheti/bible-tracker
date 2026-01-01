@@ -126,7 +126,14 @@
                 <button class="btn-nav" id="btnAnterior">
                     <i class="fas fa-chevron-left"></i>
                 </button>
-                <h2>Dia <span id="numeroDia">1</span> de 365</h2>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                    <h2>Dia <span id="numeroDia">1</span> de 365</h2>
+                    <div class="badge-progresso-dia" id="badgeProgressoDia">
+                        <i class="fas fa-book-open"></i>
+                        <span id="badgeTexto">0/0 leituras</span>
+                        <span class="badge-percentual" id="badgePercentual">0%</span>
+                    </div>
+                </div>
                 <button class="btn-nav" id="btnProximo">
                     <i class="fas fa-chevron-right"></i>
                 </button>
