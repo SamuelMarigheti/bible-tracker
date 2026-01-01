@@ -154,34 +154,27 @@ setInterval(() => {
 app.post('/api/login', (req, res) => {
   try {
     const { username, senha } = req.body;
-    console.log(`🔐 Tentativa de login: ${username}`);
 
     if (!username || !senha) {
-      console.log('❌ Username ou senha não fornecidos');
       return res.status(400).json({ error: 'Username e senha são obrigatórios' });
     }
 
     // Verificar rate limiting
     const attemptCheck = checkLoginAttempts(username);
     if (!attemptCheck.allowed) {
-      console.log(`🚫 Login bloqueado por rate limiting: ${username}`);
       return res.status(429).json({ error: attemptCheck.message });
     }
 
     const usuario = db.prepare('SELECT * FROM usuarios WHERE username = ?').get(username);
-    console.log(`👤 Usuário encontrado: ${usuario ? 'Sim' : 'Não'}`);
 
     if (!usuario) {
-      console.log('❌ Usuário não encontrado no banco');
       registerFailedAttempt(username);
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
 
     const senhaValida = bcrypt.compareSync(senha, usuario.senha_hash);
-    console.log(`🔑 Senha válida: ${senhaValida ? 'Sim' : 'Não'}`);
 
     if (!senhaValida) {
-      console.log('❌ Senha incorreta');
       registerFailedAttempt(username);
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
@@ -192,13 +185,6 @@ app.post('/api/login', (req, res) => {
     req.session.userId = usuario.id;
     req.session.isAdmin = usuario.is_admin === 1;
     req.session.nome = usuario.nome;
-
-    console.log(`✅ Login bem-sucedido: ${usuario.nome} (${usuario.username})`);
-    console.log(`🔧 Session ID: ${req.sessionID}`);
-
-    if (usuario.deve_trocar_senha === 1) {
-      console.log('⚠️  Usuário deve trocar senha no primeiro login');
-    }
 
     res.json({
       success: true,
@@ -265,8 +251,6 @@ app.get('/api/server-time', (req, res) => {
   const diffMs = nowSaoPaulo - inicioAnoSaoPaulo;
   const dayOfYear = Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
 
-  console.log(`🕐 Server Time Request - UTC: ${nowUTC.toISOString()}, São Paulo: ${nowSaoPaulo.toISOString()}, Dia: ${dayOfYear}`);
-
   res.json({
     timestamp: nowSaoPaulo.getTime(),
     iso: nowSaoPaulo.toISOString(),
@@ -321,7 +305,6 @@ app.post('/api/usuarios', requireAdmin, (req, res) => {
       VALUES (?, ?, ?, 0, 1)
     `).run(nome, username, senhaHash);
 
-    console.log(`✅ Usuário criado: ${username} (deve trocar senha no primeiro login)`);
     res.json({
       success: true,
       id: result.lastInsertRowid,
@@ -384,7 +367,6 @@ app.post('/api/usuarios/minha-senha', requireAuth, (req, res) => {
   db.prepare('UPDATE usuarios SET senha_hash = ?, deve_trocar_senha = 0 WHERE id = ?')
     .run(senhaHash, req.session.userId);
 
-  console.log(`✅ Senha alterada: ${usuario.username}`);
   res.json({ success: true });
 });
 
@@ -433,15 +415,12 @@ app.post('/api/progresso', requireAuth, (req, res) => {
 // Limpar todo progresso do usuário (Novo Ciclo)
 app.post('/api/progresso/limpar', requireAuth, (req, res) => {
   try {
-    console.log(`🔄 Limpando progresso do usuário: ${req.session.userId}`);
-
     // Deletar progresso
     db.prepare('DELETE FROM progresso WHERE usuario_id = ?').run(req.session.userId);
 
     // Deletar conquistas
     db.prepare('DELETE FROM conquistas WHERE usuario_id = ?').run(req.session.userId);
 
-    console.log('✅ Progresso e conquistas limpos com sucesso');
     res.json({ success: true });
   } catch (error) {
     console.error('❌ Erro ao limpar progresso:', error);

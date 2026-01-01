@@ -104,10 +104,7 @@ async function checkAuth() {
 
         // Verificar se deve trocar senha (primeiro login)
         if (deveTrocarSenha) {
-            console.log('⚠️ Usuário precisa trocar senha. Mostrando modal obrigatório...');
             mostrarModalTrocarSenhaObrigatorio();
-        } else {
-            console.log('✅ Usuário autenticado. Senha OK.');
         }
 
         return true;
@@ -140,25 +137,22 @@ window.salvarProgresso = async function() {
     }
 
     verificarNovasConquistas();
-    atualizarHeatmap();
+    // Atualizar calendário após salvar progresso
+    if (typeof criarCalendarioHeatmap === 'function') {
+        criarCalendarioHeatmap();
+    }
 };
 
 // Substituir função carregarProgresso original
 const _carregarProgressoOriginal = window.carregarProgresso;
 window.carregarProgresso = async function() {
-    if (!currentUser) {
-        console.warn('⚠️ carregarProgresso: currentUser não definido');
-        return;
-    }
-
-    console.log('📊 Carregando progresso do usuário:', currentUser.nome);
+    if (!currentUser) return;
 
     try {
         const response = await fetch('/api/progresso');
         const dados = await response.json();
 
         if (dados && dados.length > 0) {
-            console.log(`✅ Progresso carregado: ${dados.length} dias com dados`);
             progressoData.progresso = {};
             // Garantir que referenciasLidas existe
             if (!progressoData.referenciasLidas) {
@@ -176,7 +170,6 @@ window.carregarProgresso = async function() {
                 streak: 0
             };
         } else {
-            console.log('📝 Nenhum progresso encontrado. Inicializando novo progresso.');
             progressoData = {
                 progresso: {},
                 referenciasLidas: {}, // ← CRÍTICO: Inicializar para evitar undefined
@@ -189,8 +182,8 @@ window.carregarProgresso = async function() {
         if (typeof calcularEstatisticas === 'function') {
             calcularEstatisticas();
         }
-        if (typeof atualizarHeatmap === 'function') {
-            atualizarHeatmap();
+        if (typeof criarCalendarioHeatmap === 'function') {
+            criarCalendarioHeatmap();
         }
     } catch (err) {
         console.error('Erro ao carregar progresso:', err);
@@ -293,7 +286,6 @@ function mostrarModalTrocarSenhaObrigatorio() {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                console.log('✅ Senha alterada com sucesso! Recarregando página...');
                 showSuccess('Senha alterada com sucesso!\n\nA página será recarregada.');
 
                 // Fechar modal completamente
@@ -342,8 +334,6 @@ async function verificarAtualizacoes() {
             const novoProgressoStr = JSON.stringify(novoProgresso);
 
             if (progressoAtualStr !== novoProgressoStr) {
-                console.log('📊 Progresso atualizado detectado. Atualizando interface...');
-
                 // Atualizar dados
                 progressoData.progresso = novoProgresso;
                 progressoData.stats = {
@@ -379,15 +369,12 @@ function iniciarAutoAtualizacao() {
 
     // Iniciar polling
     autoUpdateInterval = setInterval(verificarAtualizacoes, AUTO_UPDATE_INTERVAL);
-
-    console.log('🔄 Auto-atualização ativada (verificando a cada 60 segundos)');
 }
 
 function pararAutoAtualizacao() {
     if (autoUpdateInterval) {
         clearInterval(autoUpdateInterval);
         autoUpdateInterval = null;
-        console.log('⏸️ Auto-atualização pausada');
     }
 }
 

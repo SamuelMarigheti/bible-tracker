@@ -2,11 +2,8 @@
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/js/service-worker.js')
-      .then(reg => {
-        console.log('✅ Service Worker registrado:', reg.scope);
-      })
       .catch(err => {
-        console.error('❌ Erro ao registrar Service Worker:', err);
+        console.error('Erro ao registrar Service Worker:', err);
       });
   });
 }
@@ -35,11 +32,7 @@ installButton.addEventListener('click', async () => {
   if (!deferredPrompt) return;
 
   deferredPrompt.prompt();
-  const { outcome } = await deferredPrompt.userChoice;
-
-  if (outcome === 'accepted') {
-    console.log('✅ PWA instalado');
-  }
+  await deferredPrompt.userChoice;
 
   deferredPrompt = null;
   installButton.style.display = 'none';
@@ -47,6 +40,5 @@ installButton.addEventListener('click', async () => {
 
 // Detectar quando app foi instalado
 window.addEventListener('appinstalled', () => {
-  console.log('✅ App instalado com sucesso');
   deferredPrompt = null;
 });

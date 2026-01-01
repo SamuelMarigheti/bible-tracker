@@ -102,7 +102,6 @@ async function getServerTime() {
             anoAtualCalendario = data.year;
         }
 
-        console.log(`🕐 Hora do servidor: ${data.iso} (${data.timezone}), Dia do ano: ${data.dayOfYear}`);
         return data;
     } catch (error) {
         console.error('Erro ao buscar hora do servidor, usando hora local:', error);
@@ -182,7 +181,6 @@ function exibirReferencias(referencias) {
     // Garantir que referenciasLidas existe (proteção contra undefined)
     if (!progressoData.referenciasLidas) {
         progressoData.referenciasLidas = {};
-        console.warn('⚠️ progressoData.referenciasLidas estava undefined, foi inicializado');
     }
 
     // Recuperar referências lidas deste dia
