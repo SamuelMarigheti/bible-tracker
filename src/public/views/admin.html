@@ -210,6 +210,52 @@
             font-family: 'PT Serif', serif;
             font-size: 1rem;
             background: var(--branco-suave);
+            transition: all 0.3s ease;
+        }
+
+        input:hover, select:hover {
+            border-color: var(--dourado);
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--dourado);
+            box-shadow: 0 0 0 3px rgba(218, 165, 32, 0.2);
+        }
+
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .password-wrapper input {
+            padding-right: 3rem;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 0.8rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--marrom);
+            cursor: pointer;
+            padding: 0.5rem;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+            opacity: 0.7;
+            border-radius: 4px;
+        }
+
+        .toggle-password:hover {
+            opacity: 1;
+            color: var(--dourado);
+            background: rgba(218, 165, 32, 0.1);
+        }
+
+        .toggle-password:active {
+            transform: translateY(-50%) scale(0.95);
         }
 
         .form-actions {
@@ -475,7 +521,12 @@
                 <input type="hidden" id="senhaUserId">
                 <div class="form-group">
                     <label>Nova Senha</label>
-                    <input type="password" id="novaSenha" required minlength="6">
+                    <div class="password-wrapper">
+                        <input type="password" id="novaSenha" required minlength="6">
+                        <button type="button" class="toggle-password" onclick="togglePassword('novaSenha', this)" title="Mostrar/Ocultar senha">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="form-actions">
                     <button type="button" onclick="closeSenhaModal()" class="btn btn-secondary">Cancelar</button>
@@ -511,18 +562,33 @@
             <form id="minhaSenhaForm">
                 <div class="form-group">
                     <label>Senha Atual</label>
-                    <input type="password" id="senhaAtual" required>
+                    <div class="password-wrapper">
+                        <input type="password" id="senhaAtual" required>
+                        <button type="button" class="toggle-password" onclick="togglePassword('senhaAtual', this)" title="Mostrar/Ocultar senha">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Nova Senha</label>
-                    <input type="password" id="minhaNovaSenha" required minlength="8">
+                    <div class="password-wrapper">
+                        <input type="password" id="minhaNovaSenha" required minlength="8">
+                        <button type="button" class="toggle-password" onclick="togglePassword('minhaNovaSenha', this)" title="Mostrar/Ocultar senha">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                     <small style="display: block; margin-top: 5px; color: #666;">
                         Mínimo 8 caracteres com pelo menos 1 caractere especial (!@#$%&*...)
                     </small>
                 </div>
                 <div class="form-group">
                     <label>Confirmar Nova Senha</label>
-                    <input type="password" id="confirmarSenha" required minlength="8">
+                    <div class="password-wrapper">
+                        <input type="password" id="confirmarSenha" required minlength="8">
+                        <button type="button" class="toggle-password" onclick="togglePassword('confirmarSenha', this)" title="Mostrar/Ocultar senha">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="form-actions">
                     <button type="button" onclick="closeMinhaSenhaModal()" class="btn btn-secondary">Cancelar</button>
@@ -535,6 +601,22 @@
     <script src="/js/notifications.js"></script>
     <script>
         let currentUser = null;
+
+        // Função para mostrar/ocultar senha
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
 
         // Verificar autenticação
         fetch('/api/session')

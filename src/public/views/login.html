@@ -104,7 +104,46 @@
             font-family: 'PT Serif', serif;
             font-size: 1rem;
             background: var(--branco-suave);
+            transition: all 0.3s ease;
+        }
+
+        input:hover {
+            border-color: var(--dourado);
+        }
+
+        .password-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .password-wrapper input {
+            padding-right: 3rem;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 0.8rem;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--marrom);
+            cursor: pointer;
+            padding: 0.5rem;
+            font-size: 1.2rem;
             transition: all 0.3s;
+            opacity: 0.7;
+            border-radius: 4px;
+        }
+
+        .toggle-password:hover {
+            opacity: 1;
+            color: var(--dourado);
+            background: rgba(218, 165, 32, 0.1);
+        }
+
+        .toggle-password:active {
+            transform: translateY(-50%) scale(0.95);
         }
 
         input:focus {
@@ -193,7 +232,12 @@
                 <label for="senha">
                     <i class="fas fa-lock"></i> Senha
                 </label>
-                <input type="password" id="senha" name="senha" required autocomplete="current-password">
+                <div class="password-wrapper">
+                    <input type="password" id="senha" name="senha" required autocomplete="current-password">
+                    <button type="button" class="toggle-password" onclick="togglePassword('senha', this)" title="Mostrar/Ocultar senha">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
             </div>
 
             <button type="submit" class="btn" id="loginBtn">
@@ -210,6 +254,22 @@
         const form = document.getElementById('loginForm');
         const errorDiv = document.getElementById('error');
         const loginBtn = document.getElementById('loginBtn');
+
+        // Função para mostrar/ocultar senha
+        function togglePassword(inputId, button) {
+            const input = document.getElementById(inputId);
+            const icon = button.querySelector('i');
+
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
 
         // Verificar se já está autenticado
         fetch('/api/session')
